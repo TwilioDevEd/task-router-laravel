@@ -1,5 +1,6 @@
 <?php
 
+unlink('database/taskrouter.sqlite');
 touch('database/taskrouter.sqlite');
 print "Created database taskrouter.sqlite\n";
 copy(".env.example", ".env");

@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\TaskRouter\WorkspaceFacade;
-use App\TwilioAppSettings;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use TaskRouter_Services_Twilio;
@@ -30,14 +29,17 @@ class CreateWorkspace extends Command
      */
     protected $description = 'Creates a workspace in Twilio for routing calls to a call center of 2 agents';
 
+    private $_twilioClient;
+
     /**
      * Create a new command instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(Client $twilioClient)
     {
         parent::__construct();
+        $this->_twilioClient = $twilioClient;
     }
 
     /**
@@ -56,19 +58,10 @@ class CreateWorkspace extends Command
         $workspaceConfig = $this->createWorkspaceConfig();
 
         //Create the workspace
-        $accountSid = config('services.twilio')['accountSid']
-        or die("TWILIO_ACCOUNT_SID is not set in the environment");
-        $authToken = config('services.twilio')['authToken']
-        or die("TWILIO_AUTH_TOKEN is not set in the environment");
-
-        $twilioClient = new Client($accountSid, $authToken);
-        $taskRouterClient = new Taskrouter($twilioClient);
         $params = array();
         $params['friendlyName'] = $workspaceConfig->name;
         $params['eventCallbackUrl'] = $workspaceConfig->event_callback;
-
-        $workspace = new WorkspaceFacade($taskRouterClient, $params);
-
+        $workspace = new WorkspaceFacade($this->_twilioClient->taskrouter, $params);
         $this->addWorkersToWorkspace($workspace, $workspaceConfig);
         $this->addTaskQueuesToWorkspace($workspace, $workspaceConfig);
         $workflow = $this->addWorkflowToWorkspace($workspace, $workspaceConfig);
@@ -115,10 +108,8 @@ class CreateWorkspace extends Command
     function addTaskQueuesToWorkspace($workspace, $workspaceConfig)
     {
         $this->line("Add Task Queues.");
-        $reservedActivity = $workspace->findActivityByName("Reserved")
-        or die("The activity for reservations 'Reserved' was not found. TaskQueues cannot be added.");
-        $assignmentActivity = $workspace->findActivityByName("Busy")
-        or die("The activity for reservations 'Busy' was not found. TaskQueues cannot be added.");
+        $reservedActivity = $workspace->findActivityByName("Reserved");
+        $assignmentActivity = $workspace->findActivityByName("Busy");
         foreach ($workspaceConfig->task_queues as $taskQueueJson) {
             $params = array();
             $params['friendlyName'] = $taskQueueJson->name;
@@ -190,7 +181,7 @@ class CreateWorkspace extends Command
     }
 
     /**
-     * Prints a text separated up and down by a token, usually "*"
+     * Prints a text separated up and down by a token based line, usually "*"
      */
     function printTitle($text)
     {

@@ -11,12 +11,38 @@
 |
 */
 
+/**
+ * Main view
+ */
 Route::get('/', function () {
-    $missed_calls = DB::table('missed_calls')->orderBy('created_at', 'desc')->get();
+    $missed_calls = App\MissedCall::orderBy('name', 'desc')->get();
     return view('welcome', ["missed_calls" => $missed_calls]);
 });
 
-Route::post('/call/incoming', 'TaskRouterController@incomingCall');
-Route::post('/call/enqueue', 'TaskRouterController@enqueueCall');
-Route::post('/assignment', 'TaskRouterController@assignment');
-Route::post('/events', 'TaskRouterController@events');
+/**
+ * Endpoints
+ */
+Route::group(
+    ['middleware' => ['web']], function () {
+        Route::post(
+            '/call/incoming',
+            ['uses' => 'IncomingCallController@respondToUser',
+                'as' => 'call.incoming']
+        );
+        Route::post(
+            '/call/enqueue',
+            ['uses' => 'EnqueueCallController@enqueueCall',
+                'as' => 'call.enqueue']
+        );
+        Route::post(
+            '/assignment',
+            ['uses' => 'CallbackController@assignTask',
+                'as' => 'assignment']
+        );
+        Route::get(
+            '/events',
+            ['uses' => 'CallbackController@handleEvent',
+                'as' => 'events']
+        );
+    }
+);

@@ -1,10 +1,8 @@
 <?php
 
 use App\MissedCall;
-use Illuminate\Foundation\Testing\WithoutMiddleware;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use \Illuminate\Database\Eloquent\Collection;
 
 class HomePageTest extends TestCase
 {
@@ -24,14 +22,14 @@ class HomePageTest extends TestCase
                 '/',
                 ['missed_calls' => []]
             );
-        $this->assertViewHas('missed_calls', []);
+        $this->assertViewHas('missed_calls', new Collection());
         $this->see("There are no missed calls at the moment.");
     }
 
     public function testViewMissedCalls()
     {
-        $newEntry = new MissedCall(["selectedProduct" => "Programmable SMS","phoneNumber" => "+11112323"]);
-        $newEntry2 = new MissedCall(["selectedProduct" => "Programmable Voice", "phoneNumber" => "+567567567"]);
+        $newEntry = new MissedCall(["selected_product" => "Programmable SMS","phone_number" => "+11112323"]);
+        $newEntry2 = new MissedCall(["selected_product" => "Programmable Voice", "phone_number" => "+567567567"]);
         $newEntry->save();
         $newEntry2->save();
         $this->visit("/")

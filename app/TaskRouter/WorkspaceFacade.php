@@ -3,6 +3,9 @@
 namespace App\TaskRouter;
 
 
+use Twilio\Exceptions\DeserializeException;
+use Twilio\Exceptions\TwilioException;
+
 class WorkspaceFacade
 {
     private $taskRouterClient;

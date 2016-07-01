@@ -21,7 +21,7 @@
     <section class="body-content">
         <div class="panel panel-default full-height-container">
             <div class="panel-heading"><strong>Missed calls</strong> <span class="text-muted">Product/Number<span></div>
-            @if (empty($missed_calls))
+            @if (empty($missed_calls) || $missed_calls->isEmpty())
                 <div class="panel-body">
                     <p>There are no missed calls at the moment.</p>
                 </div>
@@ -31,8 +31,12 @@
                     <tbody>
                     @foreach ($missed_calls as $missed_call)
                         <tr>
-                            <td>{{ $missed_call->selectedProduct }}</td>
-                            <td><a href="tel:{{ $missed_call->phoneNumber }}">{{ $missed_call->internationalPhoneNumber }}</a></td>
+                            <td>{{ $missed_call->selected_product }}</td>
+                            <td>
+                                <a href="tel:{{ $missed_call->phone_number }}">
+                                    {{ $missed_call->international_phone_number }}
+                                </a>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
