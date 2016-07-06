@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
-use App\Http\Requests;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Twiml;
 
@@ -18,7 +16,7 @@ class EnqueueCallController extends Controller
 
     public function enqueueCall(Request $request)
     {
-        $workflowSid = env("WORKFLOW_SID");
+        $workflowSid = config('services.twilio')['workflowSid'];
         $response = new Twiml();
         $enqueue = $response->enqueue(['workflowSid' => $workflowSid]);
         $selectedProduct = $this->_getSelectedProduct($request);
@@ -27,8 +25,8 @@ class EnqueueCallController extends Controller
     }
 
     /**
-     * Get the selected product based on user input
-     * @param $request
+     * @param $request User Request
+     * @return selected product based on user input
      */
     private function _getSelectedProduct($request)
     {

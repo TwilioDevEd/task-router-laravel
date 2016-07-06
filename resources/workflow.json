@@ -8,6 +8,12 @@
             "queue": "%(sms_task_queue_sid)s",
             "priority": 5,
             "timeout": 30
+          },
+          {
+            "queue": "%(default_task_queue_sid)s",
+            "expression": "1==1",
+            "priority": "1",
+            "timeout": "30"
           }
         ]
       },
@@ -18,15 +24,18 @@
             "queue": "%(voice_task_queue_sid)s",
             "priority": 5,
             "timeout": 30
+          },
+          {
+            "queue": "%(default_task_queue_sid)s",
+            "expression": "1==1",
+            "priority": "1",
+            "timeout": "30"
           }
         ]
       }
     ],
     "default_filter": {
-      "queue": "%(default_task_queue_sid)s",
-      "expression": "1=1",
-      "priority": 1,
-      "timeout": 30
+      "queue": "%(default_task_queue_sid)s"
     }
   }
 }

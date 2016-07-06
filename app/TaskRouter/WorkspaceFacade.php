@@ -8,13 +8,20 @@ use Twilio\Exceptions\TwilioException;
 
 class WorkspaceFacade
 {
-    private $taskRouterClient;
+    private $_taskRouterClient;
 
-    private $workspace;
+    private $_workspace;
 
-    public function __construct($taskRouterClient, $params)
+    private $_activities;
+
+    public function __construct($taskRouterClient, $workspace)
     {
-        $this->taskRouterClient = $taskRouterClient;
+        $this->_taskRouterClient = $taskRouterClient;
+        $this->_workspace = $workspace;
+    }
+
+    public static function createNewWorkspace($taskRouterClient, $params)
+    {
         $workspaceName = $params["friendlyName"];
         foreach ($taskRouterClient->workspaces()->read() as $workspace) {
             if ($workspace->friendlyName === $workspaceName) {
@@ -22,7 +29,14 @@ class WorkspaceFacade
                 break;
             }
         }
-        $this->workspace = $taskRouterClient->workspaces()->create($workspaceName, $params);
+        $workspace = $taskRouterClient->workspaces()->create($workspaceName, $params);
+        return new WorkspaceFacade($taskRouterClient, $workspace);
+    }
+
+    public static function createBySid($taskRouterClient, $workspaceSid)
+    {
+        $workspace = $taskRouterClient->workspaces()->getContext($workspaceSid);
+        return new WorkspaceFacade($taskRouterClient, $workspace);
     }
 
     /**
@@ -32,7 +46,7 @@ class WorkspaceFacade
      */
     public function __get($property)
     {
-        return $this->workspace->$property;
+        return $this->_workspace->$property;
     }
 
     /**
@@ -43,7 +57,7 @@ class WorkspaceFacade
      */
     public function __set($property, $value)
     {
-        $this->workspace->$property = $value;
+        $this->_workspace->$property = $value;
         return $this;
     }
 
@@ -53,10 +67,41 @@ class WorkspaceFacade
      */
     function findActivityByName($activityName)
     {
-        foreach ($this->workspace->activities->read() as $activity) {
-            if ($activity->friendlyName === $activityName)
-                return $activity;
+        $this->cacheActivitiesByName();
+        return $this->_activities[$activityName];
+    }
+
+    protected function cacheActivitiesByName()
+    {
+        if(!$this->_activities)
+        {
+            $this->_activities = array();
+            foreach ($this->_workspace->activities->read() as $activity) {
+                $this->_activities[$activity->friendlyName] = $activity;
+            }
         }
+    }
+
+    /**
+     * @param $sid Worker SID
+     * @return mixed worker found or null
+     */
+    function findWorkerBySid($sid)
+    {
+        return $this->_workspace->workers->getContext($sid);
+    }
+
+    /**
+     * @return array with the relation phone -> workerSid
+     */
+    function getWorkerPhones()
+    {
+        $worker_phones = array();
+        foreach ($this->_workspace->workers->read() as $worker) {
+            $workerAttribs = json_decode($worker->attributes);
+            $worker_phones[$workerAttribs->contact_uri] = $worker->sid;
+        }
+        return $worker_phones;
     }
 
     /**
@@ -65,10 +110,15 @@ class WorkspaceFacade
      */
     function findTaskQueueByName($taskQueueName)
     {
-        foreach ($this->workspace->taskQueues->read() as $taskQueue) {
+        foreach ($this->_workspace->taskQueues->read() as $taskQueue) {
             if ($taskQueue->friendlyName === $taskQueueName)
                 return $taskQueue;
         }
+    }
+
+    function updateWorkerActivity($worker, $activitySid)
+    {
+        $worker->update(['activitySid' => $activitySid ]);
     }
 
     /**
@@ -77,7 +127,7 @@ class WorkspaceFacade
      */
     function addWorker($params)
     {
-        $this->workspace->workers->create($params['friendlyName'], $params);
+        $this->_workspace->workers->create($params['friendlyName'], $params);
     }
 
     /**
@@ -86,7 +136,7 @@ class WorkspaceFacade
      */
     function addTaskQueue($params)
     {
-        $this->workspace->taskQueues->create(
+        $this->_workspace->taskQueues->create(
             $params['friendlyName'],
             $params['assignmentActivitySid'],
             $params['reservationActivitySid'],
@@ -103,7 +153,7 @@ class WorkspaceFacade
         $configJson = $params["configuration"];
         $name = $params["friendlyName"];
         $assignmentCallbackUrl = $params["assignmentCallbackUrl"];
-        return $this->workspace->workflows->create($name, $configJson, $assignmentCallbackUrl, $params);
+        return $this->_workspace->workflows->create($name, $configJson, $assignmentCallbackUrl, $params);
     }
 
 }

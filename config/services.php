@@ -26,8 +26,10 @@ return [
         /**
          * These are created with the workspace:create command for Artisan
          */
+        'workspaceSid' => env('WORKSPACE_SID'),
         'workflowSid' => env('WORKFLOW_SID'),
         'postWorkActivitySid' => env('POST_WORK_ACTIVITY_SID'),
+        'phoneToWorker' => env('PHONE_TO_WORKER'),
 
         /**
          * TaskRouter

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\MissedCall;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use TaskRouterException;
 use Twilio\Rest\Client;
 
 /**
@@ -18,11 +19,11 @@ class CallbackController extends Controller
      */
     public function assignTask()
     {
-        $dequeueModel = new \stdClass;
-        $dequeueModel->instruction = "dequeue";
-        $dequeueModel->post_work_activity_sid = config('services.twilio')['postWorkActivitySid'];
+        $deQueueModel = new \stdClass;
+        $deQueueModel->instruction = "dequeue";
+        $deQueueModel->post_work_activity_sid = config('services.twilio')['postWorkActivitySid'];
 
-        $dequeueInstructionJson = json_encode($dequeueModel);
+        $dequeueInstructionJson = json_encode($deQueueModel);
 
         return response($dequeueInstructionJson)->header('Content-Type', 'application/json');
     }
@@ -35,34 +36,39 @@ class CallbackController extends Controller
         $desirableEvents = config('services.twilio')['desirableEvents'];
         $eventTypeName = $request->input("EventType");
         if (in_array($eventTypeName, $desirableEvents)) {
-            $task = $this->_parseTaskAttributes($request);
+            $task = $this->parseTaskAttributes($request);
             if (!empty($task)) {
-                $this->_addMissingCall($task);
+                $this->addMissingCall($task);
                 $message = config('services.twilio')["leave_message"];
-                return $this->_leaveMessage($twilioClient, $task->call_sid, $message);
+                return $this->redirectToVoiceMail($twilioClient, $task->call_sid, $message);
             }
         }
-
     }
 
-    private function _parseTaskAttributes($request)
+    protected function parseTaskAttributes($request)
     {
         $taskAttrJson = $request->input("TaskAttributes");
         return json_decode($taskAttrJson);
     }
 
-    private function _addMissingCall($task)
+    protected function addMissingCall($task)
     {
-        $missedCall = new MissedCall(["selectedProduct" => $task->selected_product, "phoneNumber" => $task->from]);
+        $missedCall = new MissedCall(["selected_product" => $task->selected_product, "phone_number" => $task->from]);
         $missedCall->save();
         Log::info("New missed call added: $missedCall");
     }
 
-    private function _leaveMessage($twilioClient, $callSid, $message)
+    protected function redirectToVoiceMail($twilioClient, $callSid, $message)
     {
-        $missedCallsEmail = config('services.twilio')['missedCallsEmail'];
-        $message = urlencode($message);
-        $twimletUrl = "http://twimlets.com/voicemail?Email=$missedCallsEmail&Message=$message";
-        $twilioClient->account->update(["Url" => $twimletUrl, "Method" => "POST"]);
+        $missedCallsEmail = config('services.twilio')['missedCallsEmail']
+        or die("MISSED_CALLS_EMAIL_ADDRESS is not set in the environment");
+
+        $call = $twilioClient->calls->getContext($callSid);
+        if(!$call)
+            throw new TaskRouterException("The specified call does not exist");
+
+        $encodedMsg = urlencode($message);
+        $twimletUrl = "http://twimlets.com/voicemail?Email=$missedCallsEmail&Message=$encodedMsg";
+        $call->update(["url" => $twimletUrl, "method" => "POST"]);
     }
 }

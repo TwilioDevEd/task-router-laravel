@@ -33,6 +33,6 @@ class MissedCall extends Model
      */
     public function getInternationalPhoneNumberAttribute()
     {
-        return $this->attributes['phone_number'];
+        return formatPhoneNumberToUSInternational($this->attributes['phone_number']);
     }
 }

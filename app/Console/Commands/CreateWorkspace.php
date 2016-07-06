@@ -61,7 +61,7 @@ class CreateWorkspace extends Command
         $params = array();
         $params['friendlyName'] = $workspaceConfig->name;
         $params['eventCallbackUrl'] = $workspaceConfig->event_callback;
-        $workspace = new WorkspaceFacade($this->_twilioClient->taskrouter, $params);
+        $workspace = WorkspaceFacade::createNewWorkspace($this->_twilioClient->taskrouter, $params);
         $this->addWorkersToWorkspace($workspace, $workspaceConfig);
         $this->addTaskQueuesToWorkspace($workspace, $workspaceConfig);
         $workflow = $this->addWorkflowToWorkspace($workspace, $workspaceConfig);
@@ -90,7 +90,7 @@ class CreateWorkspace extends Command
     {
         $this->line("Add Workers.");
         $idleActivity = $workspace->findActivityByName("Idle")
-        or die("The activity 'Idle' was not found. Workers cannot be added");
+        or die("The activity 'Idle' was not found. Workers cannot be added.");
         foreach ($workspaceConfig->workers as $workerJson) {
             $params = array();
             $params['friendlyName'] = $workerJson->name;
@@ -175,13 +175,22 @@ class CreateWorkspace extends Command
         or die("Somehow the activity 'Idle' was not found.");
         $successMsg = "Workspace \"{$workspace->friendlyName}\" was created successfully.";
         $this->printTitle($successMsg);
-        $this->line("You need to set the following environment vars:");
-        $this->warn("export WORKFLOW_SID={$workflow->sid}");
-        $this->warn("export POST_WORK_ACTIVITY_SID={$idleActivity->sid}");
+        $this->line("The following variables will be exported to the system environment.");
+        $encondedWorkersPhone = http_build_query($workspace->getWorkerPhones());
+        $envVars = [
+            "WORKFLOW_SID" => $workflow->sid,
+            "POST_WORK_ACTIVITY_SID" => $idleActivity->sid,
+            "WORKSPACE_SID" => $workspace->sid,
+            "PHONE_TO_WORKER" => $encondedWorkersPhone
+        ];
+        updateEnv($envVars);
+        foreach ($envVars as $key => $value) {
+            $this->warn("export $key=$value");
+        }
     }
 
     /**
-     * Prints a text separated up and down by a token based line, usually "*"
+     * Prints a text separated up and doNwn by a token based line, usually "*"
      */
     function printTitle($text)
     {

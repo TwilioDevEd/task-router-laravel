@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskRouter for Servlets</title>
+    <title>TaskRouter for Laravel</title>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
     <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
