@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * version of sprintf for cases where named arguments are desired (python syntax)
  *
@@ -37,4 +36,36 @@ function sprintfn ($format, array $args = array()) {
     }
 
     return vsprintf($format, array_values($args));
+}
+
+function formatPhoneNumberToUSInternational($phone){
+    if(preg_match( '/^\+(\d{1})(\d{3})(\d{3})(\d{4})$/', $phone,  $matches))
+    {
+        return "+" . $matches[1] . " " . $matches[2] . '-' .$matches[3] . '-' . $matches[4];
+    }
+    return $phone;
+}
+
+function updateEnv($vars)
+{
+    $path = base_path('.env');
+    if (file_exists($path)) {
+        $content = file_get_contents($path);
+        foreach($vars as $key => $value) {
+            $content = addOrReplaceEnvVar($key, $value, $content);
+        }
+        file_put_contents($path, $content);
+        return $content;
+    }
+}
+
+
+function addOrReplaceEnvVar($varName, $newVarValue, $content)
+{
+    if(preg_match("/$varName=(.*)/", $content))
+    {
+        return preg_replace("/$varName=(.*)/", "$varName=$newVarValue", $content);
+    }else{
+        return $content.PHP_EOL."$varName=$newVarValue".PHP_EOL;
+    }
 }

@@ -28,5 +28,6 @@
         <env name="QUEUE_DRIVER" value="sync"/>
 
         <env name="POST_WORK_ACTIVITY_SID" value="WAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"/>
+        <env name="WORKSPACE_SID" value="WAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"/>
     </php>
 </phpunit>

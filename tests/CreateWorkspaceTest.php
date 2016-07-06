@@ -35,6 +35,5 @@ class CreateWorkspaceTest extends TestCase
         $this->assertEquals("+54345345345", $jsonContent->workers[0]->attributes->contact_uri);
         $this->assertEquals("+4535344", $jsonContent->workers[1]->attributes->contact_uri);
     }
-
-
+    
 }
