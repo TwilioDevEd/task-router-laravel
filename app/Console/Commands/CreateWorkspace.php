@@ -18,23 +18,21 @@ class CreateWorkspace extends Command
      * @var string
      */
     protected $signature = 'workspace:create 
-                                        {host : Server hostname in Internet} 
-                                        {bob_phone : Phone of the first agent (Bob)} 
-                                        {alice_phone : Phone of the secondary agent (Alice)}';
+                            {host : Server hostname in Internet} 
+                            {bob_phone : Phone of the first agent (Bob)} 
+                            {alice_phone : Phone of the secondary agent (Alice)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Creates a workspace in Twilio for routing calls to a call center of 2 agents';
+    protected $description = 'Creates a Twilio workspace';
 
     private $_twilioClient;
 
     /**
      * Create a new command instance.
-     *
-     * @return void
      */
     public function __construct(Client $twilioClient)
     {
@@ -61,7 +59,10 @@ class CreateWorkspace extends Command
         $params = array();
         $params['friendlyName'] = $workspaceConfig->name;
         $params['eventCallbackUrl'] = $workspaceConfig->event_callback;
-        $workspace = WorkspaceFacade::createNewWorkspace($this->_twilioClient->taskrouter, $params);
+        $workspace = WorkspaceFacade::createNewWorkspace(
+            $this->_twilioClient->taskrouter,
+            $params
+        );
         $this->addWorkersToWorkspace($workspace, $workspaceConfig);
         $this->addTaskQueuesToWorkspace($workspace, $workspaceConfig);
         $workflow = $this->addWorkflowToWorkspace($workspace, $workspaceConfig);
@@ -83,8 +84,9 @@ class CreateWorkspace extends Command
 
     /**
      * Add workers to workspace
-     * @param $workspace
-     * @param $workspaceConfig
+     *
+     * @param $workspace WorkspaceFacade
+     * @param $workspaceConfig string with Json
      */
     function addWorkersToWorkspace($workspace, $workspaceConfig)
     {
@@ -102,8 +104,9 @@ class CreateWorkspace extends Command
 
     /**
      * Add the Task Queues to the workspace
-     * @param $workspace
-     * @param $workspaceConfig
+     *
+     * @param $workspace WorkspaceFacade
+     * @param $workspaceConfig string with Json
      */
     function addTaskQueuesToWorkspace($workspace, $workspaceConfig)
     {
@@ -122,8 +125,11 @@ class CreateWorkspace extends Command
 
     /**
      * Create and configure the workflow to use in the workspace
-     * @param $workspace
-     * @param $workspaceConfig
+     *
+     * @param $workspace WorkspaceFacade
+     * @param $workspaceConfig string with Json
+     *
+     * @return object with added workflow
      */
     function addWorkflowToWorkspace($workspace, $workspaceConfig)
     {
@@ -132,27 +138,34 @@ class CreateWorkspace extends Command
         $params = array();
         $params['friendlyName'] = $workflowJson->name;
         $params['assignmentCallbackUrl'] = $workflowJson->callback;
-        $params['fallbackAssignmentCallbackUrl'] = $workflowJson->callback;
         $params['taskReservationTimeout'] = $workflowJson->timeout;
-        $params['configuration'] = $this->createWorkFlowJsonConfig($workspace, $workflowJson);
+        $params['configuration'] = $this->createWorkFlowJsonConfig(
+            $workspace,
+            $workflowJson
+        );
         return $workspace->addWorkflow($params);
     }
 
     /**
      * Create the workflow configuration in json format
+     *
      * @param $workspace
      * @param $workspaceConfig
+     *
      * @return string configuration of workflow in json format
      */
     function createWorkFlowJsonConfig($workspace, $workspaceConfig)
     {
         $params = array();
-        $defaultTaskQueue = $workspace->findTaskQueueByName("Default")
-        or die("The 'Default' task queue was not found. The Workflow cannot be created.");
-        $smsTaskQueue = $workspace->findTaskQueueByName("SMS")
-        or die("The 'SMS' task queue was not found. The Workflow cannot be created.");
-        $voiceTaskQueue = $workspace->findTaskQueueByName("Voice")
-        or die("The 'Voice' task queue was not found. The Workflow cannot be created.");
+        $defaultTaskQueue = $workspace->findTaskQueueByName("Default") or die(
+            "The 'Default' task queue was not found. The Workflow cannot be created."
+        );
+        $smsTaskQueue = $workspace->findTaskQueueByName("SMS") or die(
+            "The 'SMS' task queue was not found. The Workflow cannot be created."
+        );
+        $voiceTaskQueue = $workspace->findTaskQueueByName("Voice") or die(
+            "The 'Voice' task queue was not found. The Workflow cannot be created."
+        );
 
         $params["default_task_queue_sid"] = $defaultTaskQueue->sid;
         $params["sms_task_queue_sid"] = $smsTaskQueue->sid;
@@ -166,6 +179,7 @@ class CreateWorkspace extends Command
     /**
      * Prints the message indicating the workspace was successfully created and
      * shows the commands to export the workspace variables into the environment.
+     *
      * @param $workspace
      * @param $workflow
      */
@@ -173,9 +187,12 @@ class CreateWorkspace extends Command
     {
         $idleActivity = $workspace->findActivityByName("Idle")
         or die("Somehow the activity 'Idle' was not found.");
-        $successMsg = "Workspace \"{$workspace->friendlyName}\" was created successfully.";
+        $successMsg = "Workspace \"{$workspace->friendlyName}\"
+         was created successfully.";
         $this->printTitle($successMsg);
-        $this->line("The following variables will be exported to the system environment.");
+        $this->line(
+            "The following variables will be exported to the system environment."
+        );
         $encondedWorkersPhone = http_build_query($workspace->getWorkerPhones());
         $envVars = [
             "WORKFLOW_SID" => $workflow->sid,

@@ -25,11 +25,13 @@ class WorkspaceFacade
         $workspaceName = $params["friendlyName"];
         foreach ($taskRouterClient->workspaces()->read() as $workspace) {
             if ($workspace->friendlyName === $workspaceName) {
-                $taskRouterClient->workspaces()->getContext($workspace->sid)->delete();
+                $taskRouterClient->workspaces()
+                    ->getContext($workspace->sid)->delete();
                 break;
             }
         }
-        $workspace = $taskRouterClient->workspaces()->create($workspaceName, $params);
+        $workspace = $taskRouterClient->workspaces()
+            ->create($workspaceName, $params);
         return new WorkspaceFacade($taskRouterClient, $workspace);
     }
 
@@ -40,9 +42,13 @@ class WorkspaceFacade
     }
 
     /**
-     * Magic method to read the attributes to the wrapped workspace
-     * @param $property
-     * @return mixed
+     * Magic getter to lazy load subresources
+     *
+     * @param string $property Subresource to return
+     *
+     * @return \Twilio\ListResource The requested subresource
+     *
+     * @throws \Twilio\Exceptions\TwilioException For unknown subresources
      */
     public function __get($property)
     {
@@ -50,20 +56,11 @@ class WorkspaceFacade
     }
 
     /**
-     * Magic method to write the attributes into the wrapped workspace
-     * @param $property
-     * @param $value
-     * @return mixed
-     */
-    public function __set($property, $value)
-    {
-        $this->_workspace->$property = $value;
-        return $this;
-    }
-
-    /**
-     * @param $activityName Name of the activity to search for
-     * @return the activity found or null
+     * Gets an activity instance by its friendly name
+     *
+     * @param $activityName Friendly name of the activity to search for
+     *
+     * @return ActivityInstance of the activity found or null
      */
     function findActivityByName($activityName)
     {
@@ -71,10 +68,13 @@ class WorkspaceFacade
         return $this->_activities[$activityName];
     }
 
+    /**
+     * Caches the activities in an associative array which links friendlyName with
+     * its ActivityInstance
+     */
     protected function cacheActivitiesByName()
     {
-        if(!$this->_activities)
-        {
+        if (!$this->_activities) {
             $this->_activities = array();
             foreach ($this->_workspace->activities->read() as $activity) {
                 $this->_activities[$activity->friendlyName] = $activity;
@@ -83,7 +83,10 @@ class WorkspaceFacade
     }
 
     /**
-     * @param $sid Worker SID
+     * Looks for a worker by its SID
+     *
+     * @param $sid string with the Worker SID
+     *
      * @return mixed worker found or null
      */
     function findWorkerBySid($sid)
@@ -92,7 +95,9 @@ class WorkspaceFacade
     }
 
     /**
-     * @return array with the relation phone -> workerSid
+     * Returns an associative array with
+     *
+     * @return mixed array with the relation phone -> workerSid
      */
     function getWorkerPhones()
     {
@@ -105,24 +110,33 @@ class WorkspaceFacade
     }
 
     /**
-     * @param $taskQueueName Name of the task queue to search for
+     * Looks for a Task Queue by its friendly name
+     *
+     * @param $taskQueueName string with the friendly name of the task queue to
+     * search for
+     *
      * @return the activity found or null
      */
     function findTaskQueueByName($taskQueueName)
     {
         foreach ($this->_workspace->taskQueues->read() as $taskQueue) {
-            if ($taskQueue->friendlyName === $taskQueueName)
+            if ($taskQueue->friendlyName === $taskQueueName) {
                 return $taskQueue;
+            }
         }
     }
 
     function updateWorkerActivity($worker, $activitySid)
     {
-        $worker->update(['activitySid' => $activitySid ]);
+        $worker->update(['activitySid' => $activitySid]);
     }
 
     /**
-     * @param $params Attributes to define the new Worker in the workspace
+     * Adds workers to the workspace
+     *
+     * @param $params mixed with the attributes to define the new Worker in the
+     * workspace
+     *
      * @return worker or null
      */
     function addWorker($params)
@@ -131,21 +145,30 @@ class WorkspaceFacade
     }
 
     /**
-     * @param $params Attributes to define the new Task Queue in the workspace
+     * Adds a Task Queue to the workspace
+     *
+     * @param $params mixed with attributes to define the new Task Queue in the
+     * workspace
+     *
      * @return TaskQueue or null
      */
     function addTaskQueue($params)
     {
         $this->_workspace->taskQueues->create(
             $params['friendlyName'],
-            $params['assignmentActivitySid'],
             $params['reservationActivitySid'],
-            $params);
+            $params['assignmentActivitySid'],
+            $params
+        );
     }
 
 
     /**
-     * @param $params Attributes to define the new Workflow in the workspace
+     * Adds a workflow to the workspace
+     *
+     * @param $params mixed with attributes to define the new Workflow in the
+     * workspace
+     *
      * @return object instance of Workflow
      */
     function addWorkFlow($params)
@@ -153,7 +176,9 @@ class WorkspaceFacade
         $configJson = $params["configuration"];
         $name = $params["friendlyName"];
         $assignmentCallbackUrl = $params["assignmentCallbackUrl"];
-        return $this->_workspace->workflows->create($name, $configJson, $assignmentCallbackUrl, $params);
+        return $this->_workspace->workflows->create(
+            $name, $configJson, $assignmentCallbackUrl, $params
+        );
     }
 
 }

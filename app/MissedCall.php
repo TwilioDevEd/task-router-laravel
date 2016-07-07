@@ -29,6 +29,7 @@ class MissedCall extends Model
 
     /**
      * Phone number converted into the American International Standard
+     *
      * @return mixed
      */
     public function getInternationalPhoneNumberAttribute()

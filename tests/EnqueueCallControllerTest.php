@@ -16,7 +16,7 @@ class EnqueueCallControllerTest extends TestCase
         $twilioXmlResponse = new SimpleXMLElement($response->getContent());
 
         $this->assertEquals(
-            '{"selected_product": "ProgrammableSMS"}',
+            '{"selected_product":"ProgrammableSMS"}',
             strval($twilioXmlResponse->Enqueue->Task)
         );
     }
@@ -32,7 +32,7 @@ class EnqueueCallControllerTest extends TestCase
         $twilioXmlResponse = new SimpleXMLElement($response->getContent());
 
         $this->assertEquals(
-            '{"selected_product": "ProgrammableVoice"}',
+            '{"selected_product":"ProgrammableVoice"}',
             strval($twilioXmlResponse->Enqueue->Task)
         );
     }

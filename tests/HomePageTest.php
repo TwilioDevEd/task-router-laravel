@@ -11,7 +11,7 @@ class HomePageTest extends TestCase
     public function testBasicExample()
     {
         $this->visit('/')
-             ->see('Missed Calls');
+            ->see('Missed Calls');
     }
 
     public function testEmptyPage()
@@ -28,8 +28,18 @@ class HomePageTest extends TestCase
 
     public function testViewMissedCalls()
     {
-        $newEntry = new MissedCall(["selected_product" => "Programmable SMS","phone_number" => "+11112323"]);
-        $newEntry2 = new MissedCall(["selected_product" => "Programmable Voice", "phone_number" => "+567567567"]);
+        $newEntry = new MissedCall(
+            [
+            "selected_product" => "Programmable SMS",
+            "phone_number" => "+11112323"
+            ]
+        );
+        $newEntry2 = new MissedCall(
+            [
+            "selected_product" => "Programmable Voice",
+            "phone_number" => "+567567567"
+            ]
+        );
         $newEntry->save();
         $newEntry2->save();
         $this->visit("/")

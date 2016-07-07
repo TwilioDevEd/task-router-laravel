@@ -20,8 +20,6 @@ class TestCase extends Illuminate\Foundation\Testing\TestCase
 
         $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-        putenv('DB_CONNECTION=sqlite_testing');
-
         return $app;
     }
 
@@ -33,7 +31,6 @@ class TestCase extends Illuminate\Foundation\Testing\TestCase
 
     public function tearDown()
     {
-        Artisan::call('migrate:reset');
         parent::tearDown();
     }
 

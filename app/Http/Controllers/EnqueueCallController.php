@@ -9,6 +9,7 @@ use Twilio\Twiml;
 
 /**
  * Class EnqueueCallController
+ *
  * @package App\Http\Controllers
  */
 class EnqueueCallController extends Controller
@@ -16,25 +17,31 @@ class EnqueueCallController extends Controller
 
     public function enqueueCall(Request $request)
     {
-        $workflowSid = config('services.twilio')['workflowSid'];
+        $workflowSid = config('services.twilio')['workflowSid']
+        or die("WORKFLOW_SID is not set in the system environment");
+
+        $selectProductInstruction = new \StdClass();
+        $selectProductInstruction->selected_product
+            = $this->_getSelectedProduct($request);
+
         $response = new Twiml();
         $enqueue = $response->enqueue(['workflowSid' => $workflowSid]);
-        $selectedProduct = $this->_getSelectedProduct($request);
-        $enqueue->task("{\"selected_product\": \"$selectedProduct\"}");
+        $enqueue->task(json_encode($selectProductInstruction));
+
         return response($response)->header('Content-Type', 'text/xml');
     }
 
     /**
-     * @param $request User Request
-     * @return selected product based on user input
+     * Gets the wanted product upon the user's input
+     *
+     * @param $request Request of the user
+     *
+     * @return string selected product: "ProgrammableSMS" or "ProgrammableVoice"
      */
     private function _getSelectedProduct($request)
     {
-        $selectedOption = $request->input("Digits");
-        if (empty($selectedOption))
-        {
-            throw new TwilioException("You have not specified a valid option");
-        }
-        return $selectedOption == 1 ? "ProgrammableSMS" : "ProgrammableVoice";
+        return $request->input("Digits") == 1
+            ? "ProgrammableSMS"
+            : "ProgrammableVoice";
     }
 }

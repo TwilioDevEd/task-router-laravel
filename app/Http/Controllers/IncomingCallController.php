@@ -7,6 +7,7 @@ use Twilio\Twiml;
 
 /**
  * Class IncomingCallController
+ *
  * @package App\Http\Controllers
  */
 class IncomingCallController extends Controller
@@ -23,7 +24,9 @@ class IncomingCallController extends Controller
         $params['method'] = "POST";
 
         $params = $response->gather($params);
-        $params->say('For Programmable SMS, press one. For Voice, press any other key.');
+        $params->say(
+            'For Programmable SMS, press one. For Voice, press any other key.'
+        );
 
         return response($response)->header('Content-Type', 'text/xml');
     }

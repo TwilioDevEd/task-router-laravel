@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\TaskRouterException;
 use Illuminate\Http\Request;
 use App\TaskRouter\WorkspaceFacade;
-use TaskRouterException;
 use Twilio\Twiml;
 
 class MessageController extends Controller
 {
 
-    public function handleIncomingMessage(Request $request, WorkspaceFacade $workspace)
-    {
+    public function handleIncomingMessage(
+        Request $request, WorkspaceFacade $workspace
+    ) {
         $cmd = strtolower($request->input("Body"));
         $fromNumber = $request->input("From");
         $newWorkerStatus = ($cmd === "off") ? "Offline" : "Idle";
@@ -41,11 +42,9 @@ class MessageController extends Controller
     {
         $phoneToWorkerStr = config('services.twilio')['phoneToWorker'];
         parse_str($phoneToWorkerStr, $phoneToWorkerArray);
-        $workerSid = $phoneToWorkerArray[$phone];
-        if (!$workerSid) {
-            throw new \TaskRouterException("You are not a valid worker");
+        if (empty($phoneToWorkerArray[$phone])) {
+            throw new TaskRouterException("You are not a valid worker");
         }
-        
-        return $workspace->findWorkerBySid($workerSid);
+        return $workspace->findWorkerBySid($phoneToWorkerArray[$phone]);
     }
 }

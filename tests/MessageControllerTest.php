@@ -4,7 +4,10 @@ class MessageControllerTest extends TestCase
 {
 
     /**
+     * Tests MessageController@handleIncomingMessage
+     *
      * @param $postParams Post params
+     *
      * @dataProvider providerPostParams
      */
     public function testHandleIncomingMessage($body, $phone, $expected)

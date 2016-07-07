@@ -1,6 +1,9 @@
 <?php
 
-class TaskRouterException extends Exception
+namespace App\Exceptions;
+
+
+class TaskRouterException extends \Exception
 {
     
 }

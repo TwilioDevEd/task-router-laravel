@@ -24,6 +24,10 @@
             @if (empty($missed_calls) || $missed_calls->isEmpty())
                 <div class="panel-body">
                     <p>There are no missed calls at the moment.</p>
+                    <p>Call to your Twilio Phone number:<p>
+                    <ul>
+                        <li><a href="tel:{{ $twilioNumber }}">{{ formatPhoneNumberToUSInternational($twilioNumber) }}</a></li>
+                    </ul>
                 </div>
             @else
                 <!-- Table -->

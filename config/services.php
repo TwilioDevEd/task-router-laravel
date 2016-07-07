@@ -34,7 +34,8 @@ return [
         /**
          * TaskRouter
          */
-        'desirableEvents' => ["workflow.timeout", "task.canceled"],
-        'leave_message' => "Sorry, All agents are busy. Please leave a message. We will call you as soon as possible"
+        'missedCallEvents' => ["workflow.timeout", "task.canceled"],
+        'leaveMessage' => "Sorry, All agents are busy. Please leave a message. We will call you as soon as possible",
+        'offlineMessage' => 'Your status has changed to Offline. Reply with "On" to get back Online'
     ]
 ];

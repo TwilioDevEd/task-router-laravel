@@ -14,17 +14,22 @@ class CallbackControllerTest extends TestCase
         $twilioJsonResponse = json_decode($response->getContent());
 
         $this->assertEquals($twilioJsonResponse->instruction, "dequeue");
-        $this->assertEquals($twilioJsonResponse->post_work_activity_sid, $fakePostWorkActivitySid);
+        $this->assertEquals(
+            $twilioJsonResponse->post_work_activity_sid, $fakePostWorkActivitySid
+        );
     }
 
     /**
-     * @params mixed $taskAttributes contains the attributes of the task send by Twilio
+     * Tests CallbackController@handleEvent
+     *
+     * @params $taskAttributes mixed containing the attributes of the task send by
+     * Twilio
      *
      * @dataProvider providerTaskAttributesJson
      */
     public function testHandleEvent($taskAttributes)
     {
-        $leaveMsg = config('services.twilio')["leave_message"];
+        $leaveMsg = config('services.twilio')["leaveMessage"];
         $desirableEvents = config('services.twilio')['desirableEvents'];
         foreach ($desirableEvents as $desirableEvent) {
             $response = $this->call(
@@ -33,7 +38,8 @@ class CallbackControllerTest extends TestCase
                 [
                     "EventType" => $desirableEvent,
                     "TaskAttributes" => $taskAttributes
-                ]);
+                ]
+            );
             $this->assertResponseOk();
             $this->assertEquals('Leaving message', $response->getContent());
         }

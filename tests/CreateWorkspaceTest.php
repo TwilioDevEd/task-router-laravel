@@ -1,12 +1,5 @@
 <?php
 
-use App\Console\Commands\CreateWorkspace;
-use Illuminate\Foundation\Testing\WithoutMiddleware;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\App;
-use Twilio\Rest\Client;
-
 class CreateWorkspaceTest extends TestCase
 {
 
@@ -14,15 +7,29 @@ class CreateWorkspaceTest extends TestCase
     {
         //given
         $twilioClient = $this->getMockBuilder("Twilio\Rest\Client")
-            ->setConstructorArgs(["ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "WSXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"])
+            ->setConstructorArgs(
+                [
+                    "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+                    "WSXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                ]
+            )
             ->getMock();
-        $createWorkspaceCmd = Mockery::mock("App\Console\Commands\CreateWorkspace", $twilioClient);
+        $createWorkspaceCmd = Mockery::mock(
+            "App\Console\Commands\CreateWorkspace", $twilioClient
+        );
         $createWorkspaceCmd->shouldReceive("argument")
             ->once()
-            ->andReturn(["host" => "hostname", "bob_phone" => "+54345345345", "alice_phone" => "+4535344"]);
+            ->andReturn(
+                [
+                    "host" => "hostname",
+                    "bob_phone" => "+54345345345",
+                    "alice_phone" => "+4535344"
+                ]
+            );
 
         $fileContent = File::get("resources/workspace.json");
-        $interpolatedContent = sprintfn($fileContent, $createWorkspaceCmd->argument());
+        $interpolatedContent
+            = sprintfn($fileContent, $createWorkspaceCmd->argument());
         $jsonData = json_decode($interpolatedContent);
 
         $createWorkspaceCmd->shouldReceive('createWorkspaceConfig')
@@ -32,8 +39,12 @@ class CreateWorkspaceTest extends TestCase
         $jsonContent = $createWorkspaceCmd->createWorkspaceConfig();
         $this->assertFalse(empty($jsonContent));
         $this->assertEquals("hostname/events", $jsonContent->event_callback);
-        $this->assertEquals("+54345345345", $jsonContent->workers[0]->attributes->contact_uri);
-        $this->assertEquals("+4535344", $jsonContent->workers[1]->attributes->contact_uri);
+        $this->assertEquals(
+            "+54345345345", $jsonContent->workers[0]->attributes->contact_uri
+        );
+        $this->assertEquals(
+            "+4535344", $jsonContent->workers[1]->attributes->contact_uri
+        );
     }
     
 }

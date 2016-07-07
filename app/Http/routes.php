@@ -14,10 +14,21 @@
 /**
  * Main view
  */
-Route::get('/', function () {
-    $missed_calls = App\MissedCall::orderBy('created_at', 'desc')->get();
-    return view('welcome', ["missed_calls" => $missed_calls]);
-});
+Route::get(
+    '/', function () {
+        $missed_calls = App\MissedCall::orderBy('created_at', 'desc')->get();
+
+        $twilioNumber = config('services.twilio')['number']
+        or die("TWILIO_NUMBER is not set in the system environment");
+
+        return view(
+            'welcome', [
+            "missed_calls" => $missed_calls,
+            "twilioNumber" => $twilioNumber
+            ]
+        );
+    }
+);
 
 /**
  * Endpoints
