@@ -17,9 +17,9 @@ class CreateWorkspace extends Command
      *
      * @var string
      */
-    protected $signature = 'workspace:create 
-                            {host : Server hostname in Internet} 
-                            {bob_phone : Phone of the first agent (Bob)} 
+    protected $signature = 'workspace:create
+                            {host : Server hostname in Internet}
+                            {bob_phone : Phone of the first agent (Bob)}
                             {alice_phone : Phone of the secondary agent (Alice)}';
 
     /**
