@@ -13,7 +13,6 @@ class MessageController extends Controller
     public function handleIncomingMessage(
         Request $request, WorkspaceFacade $workspace
     ) {
-    
         $cmd = strtolower($request->input("Body"));
         $fromNumber = $request->input("From");
         $newWorkerStatus = ($cmd === "off") ? "Offline" : "Idle";

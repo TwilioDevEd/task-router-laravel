@@ -27,7 +27,7 @@ class CreateWorkspace extends Command
      *
      * @var string
      */
-    protected $description = 'Creates a Twilio workspace';
+    protected $description = 'Creates a Twilio workspace for 2 call agents';
 
     private $_twilioClient;
 

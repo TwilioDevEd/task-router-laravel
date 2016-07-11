@@ -39,11 +39,11 @@ class CallbackController extends Controller
      */
     public function handleEvent(Request $request, Client $twilioClient)
     {
-        $desirableEvents = config('services.twilio')['missedCallEvents'];
+        $missedCallEvents = config('services.twilio')['missedCallEvents'];
 
         $eventTypeName = $request->input("EventType");
 
-        if (in_array($eventTypeName, $desirableEvents)) {
+        if (in_array($eventTypeName, $missedCallEvents)) {
             $taskAttr = $this->parseAttributes("TaskAttributes", $request);
             if (!empty($taskAttr)) {
                 $this->addMissingCall($taskAttr);
