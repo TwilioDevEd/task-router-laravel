@@ -1,0 +1,272 @@
+<!DOCTYPE html><html><head><title>Task Router on Laravel</title><style>body, html {
+  height:100%;
+  width:100%;
+  padding:0;
+  margin:0;
+  overflow:hidden;
+  background-color:#ddd;
+}
+.wrapper {
+  height:100%;
+  width:100%;
+}</style><link rel="shortcut icon" href="//twilio.com/bundles/marketing/img/favicons/favicon.ico"><link rel="apple-touch-icon" href="//twilio.com/bundles/marketing/img/favicons/favicon_57.png"><link rel="apple-touch-icon" sizes="72x72" href="//twilio.com/bundles/marketing/img/favicons/favicon_72.png"><link rel="apple-touch-icon" sizes="114x114" href="//twilio.com/bundles/marketing/img/favicons/favicon_114.png"><link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"><link rel="stylesheet" href="viewsaurus.css"></head><body><div class="wrapper"><div id="viewsaurus" data-title="Task Router on Laravel"><div class="saurus-panes"><div class="saurus-prose"><div class="saurus-prose-header"><div class="title-outer"><span class="step-title">Task Router on Laravel</span></div></div><div class="saurus-nav-buttons"><div class="saurus-nav-button nav-overview"><div class="saurus-nav-button-inner"><i class="fa fa-fw fa-list"></i></div><div class="nav-divider"></div></div><div class="saurus-nav-button nav-previous"><div class="saurus-nav-button-inner"><a href=""> <i class="fa fa-fw fa-play fa-rotate-180"></i></a></div><div class="nav-divider"></div></div><div class="saurus-nav-button nav-next clickable"><div class="saurus-nav-button-inner"><a href="#1"> <i class="fa fa-fw fa-play"></i></a></div></div><div class="saurus-next-title"><span class="next-title-inner"></span></div></div><div class="saurus-progress-bar"></div><div class="saurus-start"><p>Give your customers specialized product support. Learn how to use TaskRouter to create a workflow that will redirect users to an appropriate sales agent, based on the product they select.</p><a href="#0">Start Tutorial</a></div><div class="saurus-content"><div data-title="TaskRouter Servlets" class="chapter"><div data-title="Application Overview" data-file="resources/workspace.json" class="step"><h2 id="application-overview">Application Overview</h2>
+<p>In this tutorial we will show how to automate the routing of calls from
+customers to your support agents. Customers will be able to select a
+product and wait while TaskRouter tries to contact a product
+specialist for the best support experience. If no one is available, our
+application will save the customer&#39;s number and selected product so
+an agent can call them back later on.</p>
+<p>This is what the application does at a high level:</p>
+<ol>
+<li>Configure a workspace using the Twilio REST API.</li>
+<li>Listen for incoming calls and let the user select a product with the dial pad.</li>
+<li>Create a Task with the selected product and let TaskRouter handle it.</li>
+<li>Store missed calls so agents can return the call to customers.</li>
+</ol>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//laravel.com/docs/5.2/">Laravel Documentation</a></li>
+<li><a href="//www.twilio.com/docs/quickstart/php/taskrouter">Getting Started with Twilio TaskRouter</a></li>
+</ul>
+</div><div data-title="Configuring the Workspace" data-file="resources/workspace.json" class="step"><h2 id="configuring-the-workspace">Configuring the Workspace</h2>
+<p>In order to instruct TaskRouter to handle the Tasks, we need to
+configure a Workspace. We can do this in the <a href="//www.twilio.com/console/taskrouter/workspaces">TaskRouter
+Console</a> or
+programmatically using the <a href="https://www.twilio.com/docs/api/taskrouter/rest-api">TaskRouter REST API</a>.</p>
+<p>A <a href="https://www.twilio.com/docs/api/taskrouter/workspaces">Workspace</a> is the container element for any TaskRouter
+application. The elements are:</p>
+<ul>
+<li><a href="https://www.twilio.com/docs/api/taskrouter/commands">Tasks</a> - Represents a customer trying to contact an agent.</li>
+<li><a href="https://www.twilio.com/docs/api/taskrouter/workers">Workers</a> - The agents responsible for handling Tasks.</li>
+<li><a href="https://www.twilio.com/docs/api/taskrouter/taskqueues">Task Queues</a> - Holds Tasks to be consumed by a set of Workers.</li>
+<li><a href="https://www.twilio.com/docs/api/taskrouter/workflows">Workflows</a> - Responsible for placing Tasks into Task Queues.</li>
+<li><a href="https://www.twilio.com/docs/api/taskrouter/activities">Activities</a> - Possible states of a Worker, e.g. Idle,
+Offline, Busy.</li>
+</ul>
+<p>In order to build a client for this API, we need as system variables a
+<code>TWILIO_ACCOUNT_SID</code> and <code>TWILIO_AUTH_TOKEN</code> which you can find on <a href="//www.twilio.com/console">Twilio
+Console</a>. The artisan command <code>workspace:create</code>
+creates a <code>Twilio\Rest\Client</code>, which is provided by the
+<a href="https://twilio.github.io/twilio-php">Twilio PHP library</a>. This client is used by
+<a href="//github.com/TwilioDevEd/task-router-laravel/blob/master/app/TaskRouter/WorkspaceFacade.php">WorkspaceFacade</a> which encapsulates all logic related to
+the class <code>Twilio\Rest\Taskrouter\V1\WorkspaceContext</code>.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="https://www.twilio.com/docs/api/taskrouter/rest-api">TaskRouter: REST API Reference</a></li>
+<li><a href="https://twilio.github.io/twilio-php">TaskRouter: PHP API Documentation</a></li>
+</ul>
+</div><div data-title="The CreateWorkspace Command" data-file="app/Console/Commands/CreateWorkspace.php" data-highlight="15-23,43-65,71" class="step"><h2 id="the-createworkspace-artisan-command">The CreateWorkspace Artisan Command</h2>
+<p>In this application the <a href="//laravel.com/docs/4.2/commands#introduction">Artisan command</a> <code>workspace:create</code> 
+is used to orchestrate calls to our <code>WorkspaceFacade</code> class in order to 
+build a Workspace from scratch. <code>CreateWorkspace</code> is the php class behind 
+the Artisan command. It uses data provided by <code>workspace.json</code> and expects 
+3 arguments:</p>
+<ol>
+<li><code>host</code> - A public URL to which Twilio can send requests. This can be
+either a cloud service or <a href="//ngrok.com/docs">ngrok</a>, which can expose a local
+application to the internet.</li>
+<li><code>bob_phone</code> - The telephone number of Bob, the Programmable SMS specialist.</li>
+<li><code>alice_phone</code> - Same for Alice, the Programmable Voice specialist.</li>
+</ol>
+<p>The function <code>createWorkspaceConfig</code> is used to load the
+configuration of the workspace from <code>workspace.json</code>.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//laravel.com/docs/4.2/commands#introduction">More about Artisan Development</a></li>
+<li><a href="//ngrok.com/docs">Ngrok documentation</a></li>
+<li><a href="//www.twilio.com/docs/quickstart/php/taskrouter">TaskRouter PHP Quickstart Overview</a></li>
+</ul>
+</div><div data-title="Creating a Workspace" data-file="app/TaskRouter/WorkspaceFacade.php" data-highlight="23-36" class="step"><h1 id="creating-a-workspace">Creating a Workspace</h1>
+<p>Before creating a workspace, we need to delete any others with the same 
+<code>friendlyName</code> as identifier. In order to create a workspace we need
+to provide a <code>friendlyName</code>, and a <code>eventCallbackUrl</code> which contains an 
+url to be called every time an event is triggered in the workspace.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/docs/api/taskrouter/workspaces">TaskRouter REST API: Workspaces</a></li>
+</ul>
+</div><div data-title="Creating the Workers" data-file="app/Console/Commands/CreateWorkspace.php" data-highlight="56,66,85-103" class="step"><h1 id="creating-the-workers">Creating the Workers</h1>
+<p>We&#39;ll create two workers, Bob and Alice. They each have two attributes:
+<code>contact_uri</code> a phone number and <code>products</code>, a list of products
+each worker is specialized in. We also need to specify an <code>activity_sid</code>
+and a name for each worker. The selected activity will define the status 
+of the worker.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/docs/api/taskrouter/workers">TaskRouter REST API: Workers</a></li>
+</ul>
+</div><div data-title="Creating the Task Queues" data-file="app/Console/Commands/CreateWorkspace.php" data-highlight="56,67,105-124" class="step"><h1 id="creating-the-task-queues">Creating the Task Queues</h1>
+<p>Next, we set up the Task Queues. Each with a name and a <code>targetWorkers</code> property,
+which is an expression to match Workers. Our Task Queues are:</p>
+<ol>
+<li><code>SMS</code> - Will target Workers specialized in Programmable SMS, such
+as Bob, using the expression <code>&quot;products HAS \&quot;ProgrammableSMS\&quot;&quot;</code>.</li>
+<li><code>Voice</code> - Will do the same for Programmable Voice Workers, such
+as Alice, using the expression <code>&quot;products HAS \&quot;ProgrammableVoice\&quot;&quot;</code>.</li>
+<li><code>All</code> - This queue targets all users and can be used when there are
+no specialist around for the chosen product. We can use the <code>&quot;1==1&quot;</code>
+expression here.</li>
+</ol>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/docs/api/taskrouter/taskqueues">TaskRouter REST API: Task Queues</a></li>
+<li><a href="//www.twilio.com/docs/api/taskrouter/taskqueues#target-workers">TargetWorkers&#39;s Expressions</a></li>
+</ul>
+</div></div><div data-title="Creating a Workflow" data-file="app/Console/Commands/CreateWorkspace.php" data-highlight="56,68,126-147" class="step"><h1 id="creating-a-workflow">Creating a Workflow</h1>
+<p>Finally, we set up the Workflow using the following parameters:</p>
+<ol>
+<li><code>friendlyName</code> as the name of a Workflow.</li>
+<li><code>assignmentCallbackUrl</code> as the public URL where a request will be made
+when this Workflow assigns a Task to a Worker. We will learn how to
+implement it on the next steps.</li>
+<li><code>taskReservationTimeout</code> as the maximum time we want to wait until a Worker
+handles a Task.</li>
+<li><code>configuration</code> which is a set of rules for placing Task into Task Queues.
+The routing configuration will take a Task&#39;s attribute and match this with Task
+Queues. This application&#39;s Workflow rules are defined as:<ol>
+<li><code>selected_product==&quot;ProgrammableSMS&quot;</code> expression for <code>SMS</code> Task
+Queue. This expression will match any Task with <code>ProgrammableSMS</code> as
+the <code>selected_product</code> attribute.</li>
+<li><code>selected_product==&quot;ProgrammableVoice</code> expression for <code>Voice</code>
+Task Queue.</li>
+</ol>
+</li>
+</ol>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/docs/api/taskrouter/workflows">TaskRouter REST API: Workflows</a></li>
+</ul>
+</div><div data-title="Handling Twilio's Request" data-file="app/Http/Controllers/IncomingCallController.php" data-highlight="8-33" class="step"><h2 id="handling-twilio-s-request">Handling Twilio&#39;s Request</h2>
+<p>Right after receiving a call, Twilio will send a request to the
+URL specified on the <a href="//www.twilio.com/console/phone-numbers/incoming">number&#39;s configuration</a>.</p>
+<p>The endpoint will then process the request and generate a TwiML response.
+We&#39;ll use the <a href="//www.twilio.com/docs/api/twiml/say">Say</a> verb to give the user
+product alternatives, and a key they can press in order to select one. 
+The <a href="//www.twilio.com/docs/api/twiml/gather">Gather</a> verb allows us to
+capture the user&#39;s key press.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/platform/webhooks">Twilio webhooks</a></li>
+<li><a href="//www.twilio.com/docs/api/twiml/your_response">TwiML Voice: Your Response</a></li>
+<li><a href="//www.twilio.com/docs/api/twiml/say">TwiML Voice: &lt;Say&gt; verb</a></li>
+<li><a href="//www.twilio.com/docs/api/twiml/gather">TwiML Voice: &lt;Gather&gt; verb</a></li>
+</ul>
+</div><div data-title="Creating a Task" data-file="app/Http/Controllers/EnqueueCallController.php" data-highlight="10-47" class="step"><h2 id="creating-a-task">Creating a Task</h2>
+<p>This is the endpoint set as the <code>action</code> URL on the <code>Gather</code> verb on the
+previous step. A request is made to this endpoint when the user presses
+a key during the call.
+This request has a <code>Digits</code> parameter that holds the pressed keys.
+A <code>Task</code> will be created based on the pressed digit with the
+<code>selected_product</code> as an attribute. The Workflow will take this Task&#39;s
+attributes and match them with the <a href="//www.twilio.com/docs/api/taskrouter/expression-syntax">configured
+expressions</a>
+in order to find a corresponding Task Queue, so an appropriate available
+Worker can be assigned to handle it.</p>
+<p>We use the <a href="//www.twilio.com/docs/api/twiml/enqueue"><code>Enqueue</code> verb</a> with a <code>workflowSid</code> attribute
+to <a href="//www.twilio.com/docs/api/taskrouter/twiml-integration#using-enqueue-to-route-calls-with-taskrouter">integrate with TaskRouter</a>. Then the voice call will
+be put on hold while TaskRouter tries to find an available Worker to
+handle this Task.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/docs/api/twiml/twilio_request">TwiML Voice: Twilio&#39;s Request</a></li>
+<li><a href="//www.twilio.com/docs/api/twiml/gather#attributes-action-parameters">TwiML Voice: &lt;Gather&gt; callback attributes</a></li>
+<li><a href="//www.twilio.com/docs/api/twiml/enqueue">TwiML Voice: &lt;Enqueue&gt; verb</a></li>
+<li><a href="//www.twilio.com/docs/api/taskrouter/twiml-integration#using-enqueue-to-route-calls-with-taskrouter">TaskRouter: Using &lt;Enqueue&gt; to route calls with TaskRouter</a></li>
+</ul>
+</div><div data-title="Assigning a Worker" data-file="app/Http/Controllers/CallbackController.php" data-highlight="18-32" class="step"><h2 id="assigning-a-worker">Assigning a Worker</h2>
+<p>When TaskRouter selects a Worker, it does the following:</p>
+<ol>
+<li>The Task&#39;s Assignment Status is set to <code>reserved</code>.</li>
+<li>A <a href="//www.twilio.com/docs/api/taskrouter/reservations">Reservation instance</a> is generated,
+linking the Task to the selected Worker.</li>
+<li>At the same time the Reservation is created, a POST request is
+made to the Workflow&#39;s AssignmentCallbackURL, which was configured using
+the Artisan command <a href="//github.com/TwilioDevEd/task-router-laravel/blob/master/app/Console/Commands/CreateWorkspace.php"><code>workspace:create</code></a>.
+This request includes the full details of the Task, the selected Worker,
+and the Reservation.</li>
+</ol>
+<p>Handling this <a href="//www.twilio.com/docs/api/taskrouter/handling-assignment-callbacks">Assignment Callback</a> is a key
+component of building a TaskRouter application as we can instruct how the
+Worker will handle a Task. We could send a text, e-mail, push
+notifications or make a call.</p>
+<p>Since we created this Task during a voice call with an <code>Enqueue</code> verb,
+let&#39;s <a href="//www.twilio.com/docs/api/taskrouter/handling-assignment-callbacks#dequeue-call">instruct TaskRouter to dequeue</a> the call and dial
+a Worker. If we do not specify a <code>to</code> parameter with a
+phone number, TaskRouter will pick the Worker&#39;s <code>contact_uri</code> attribute.</p>
+<p>We also send a <code>post_work_activity_sid</code> which will tell TaskRouter which
+<a href="//www.twilio.com/docs/quickstart/ruby/taskrouter/setup-understanding-activities">Activity</a> to assign this worker after the call ends.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/docs/api/taskrouter/handling-assignment-callbacks">Assigning Commands to Workers: Handling Assignment Callbacks</a></li>
+<li><a href="//www.twilio.com/docs/api/taskrouter/handling-assignment-callbacks#dequeue-call">Assigning Commands to Workers: Dequeue a call from a TwiML queue</a></li>
+<li><a href="//www.twilio.com/docs/quickstart/php/taskrouter/setup-understanding-activities">TaskRouter Quickstart: Understanding Activities</a></li>
+</ul>
+</div><div data-title="Collecting Missed Calls" data-file="app/Http/Controllers/CallbackController.php" data-highlight="34-65,73-99" class="step"><h2 id="collecting-missed-calls">Collecting Missed Calls</h2>
+<p>This endpoint will be called after each <a href="//www.twilio.com/docs/api/taskrouter/events#event-types">TaskRouter Event</a>
+is triggered. In our application, we are trying to collect missed calls,
+so we would like to handle the <code>workflow.timeout</code> event. This event is
+triggered when the Task waits more than the limit set on Workflow
+Configuration-- or rather when no worker is available.</p>
+<p>Here we use TwilioRestClient to route this call to a <a href="//www.twilio.com/labs/twimlets/voicemail">Voicemail
+Twimlet</a>. Twimlets are tiny web applications for
+voice.  This one will generate a <code>TwiML</code> response using <code>Say</code> verb and
+record a message using <code>Record</code> verb. The recorded message will then be
+transcribed and sent to the email address configured.</p>
+<p>We are also listening for <code>task.canceled</code>. This is triggered
+when the customer hangs up before being assigned to an agent, therefore
+canceling the task. Capturing this event allows us to collect the
+information from the customers that hang up before the Workflow times out.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/docs/api/taskrouter/events">TaskRouter: Events</a></li>
+<li><a href="//www.twilio.com/docs/api/taskrouter/events#event-types">TaskRouter: Event types</a></li>
+<li><a href="//www.twilio.com/labs/twimlets">Twilio Twimlets</a></li>
+</ul>
+</div><div data-title="Changing a Worker's Activity" data-file="app/Http/Controllers/MessageController.php" data-highlight="10-50" class="step"><h2 id="changing-a-worker-s-activity">Changing a Worker&#39;s Activity</h2>
+<p>We have created this endpoint, so a worker can send an SMS message to the 
+support line with the command &quot;On&quot; or &quot;Off&quot; to change their availability 
+status.</p>
+<p>This is important as a worker&#39;s activity will change to <code>Offline</code> when 
+they miss a call. When this happens, they receive an SMS letting them know
+that their activity has changed, and that they can reply with the <code>On</code> 
+command to make themselves available for incoming calls again.</p>
+<hr>
+<p><strong>See Also:</strong></p>
+<ul>
+<li><a href="//www.twilio.com/docs/api/taskrouter/events">TaskRouter: Events</a></li>
+<li><a href="//www.twilio.com/docs/api/taskrouter/events#event-types">TaskRouter: Event types</a></li>
+</ul>
+</div><div class="step"><h2 id="where-to-next-">Where to next?</h2>
+<p>That&#39;s it! We have just implemented employee directory using Laravel.
+Now you can get your employee&#39;s information by texting a Twilio number.</p>
+<p>If you&#39;re a PHP developer working with Twilio, you might also enjoy these
+tutorials:</p>
+<p><a href="//www.twilio.com/docs/tutorials/walkthrough/automated-survey/php/laravel"><strong>Automated-Survey</strong></a></p>
+<p>Instantly collect structured data from your users with a survey conducted
+over a call or SMS text messages. Let&#39;s get started!</p>
+<p><a href="//www.twilio.com/docs/tutorials/walkthrough/eta-notifications/php/laravel"><strong>ETA-Notifications</strong></a></p>
+<p>Learn how to implement ETA Notifications using Laravel and Twilio.</p>
+<p>Thanks for checking this tutorial out! If you have any feedback
+to share with us, we&#39;d love to hear it.
+<a href="mailto:deved-oss@twilio.com">Contact the Twilio Developer Education Team</a> to let us know what you think.</p>
+</div>
+<div class="saurus-files" style="display:none;"><textarea class="saurus-file" data-file="resources/workspace.json" data-mode="json">ewogICJuYW1lIjogIlR3aWxpbyBXb3Jrc3BhY2UiLAogICJldmVudF9jYWxsYmFjayI6ICIlKGhvc3Qpcy9ldmVudHMiLAogICJ3b3JrZXJzIjogWwogICAgewogICAgICAibmFtZSI6ICJCb2IiLAogICAgICAiYXR0cmlidXRlcyI6IHsKICAgICAgICAicHJvZHVjdHMiOiBbCiAgICAgICAgICAiUHJvZ3JhbW1hYmxlU01TIgogICAgICAgIF0sCiAgICAgICAgImNvbnRhY3RfdXJpIjogIiUoYm9iX3Bob25lKXMiCiAgICAgIH0KICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogIkFsaWNlIiwKICAgICAgImF0dHJpYnV0ZXMiOiB7CiAgICAgICAgInByb2R1Y3RzIjogWwogICAgICAgICAgIlByb2dyYW1tYWJsZVZvaWNlIgogICAgICAgIF0sCiAgICAgICAgImNvbnRhY3RfdXJpIjogIiUoYWxpY2VfcGhvbmUpcyIKICAgICAgfQogICAgfQogIF0sCiAgImFjdGl2aXRpZXMiOiBbCiAgICB7CiAgICAgICJuYW1lIjogIk9mZmxpbmUiLAogICAgICAiYXZhaWxhYmlsaXR5IjogImZhbHNlIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiSWRsZSIsCiAgICAgICJhdmFpbGFiaWxpdHkiOiAidHJ1ZSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogIkJ1c3kiLAogICAgICAiYXZhaWxhYmlsaXR5IjogImZhbHNlIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiUmVzZXJ2ZWQiLAogICAgICAiYXZhaWxhYmlsaXR5IjogImZhbHNlIgogICAgfQogIF0sCiAgInRhc2tfcXVldWVzIjogWwogICAgewogICAgICAibmFtZSI6ICJEZWZhdWx0IiwKICAgICAgInRhcmdldFdvcmtlcnMiOiAiMT09MSIKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogIlNNUyIsCiAgICAgICJ0YXJnZXRXb3JrZXJzIjogInByb2R1Y3RzIEhBUyBcIlByb2dyYW1tYWJsZVNNU1wiIgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiVm9pY2UiLAogICAgICAidGFyZ2V0V29ya2VycyI6ICJwcm9kdWN0cyBIQVMgXCJQcm9ncmFtbWFibGVWb2ljZVwiIgogICAgfQogIF0sCiAgIndvcmtmbG93IjogewogICAgIm5hbWUiOiAiU2FsZXMiLAogICAgImNhbGxiYWNrIjogIiUoaG9zdClzL2Fzc2lnbm1lbnQiLAogICAgInRpbWVvdXQiOiAiMTUiCiAgfQp9Cg==</textarea>
+<textarea class="saurus-file" data-file="app/Console/Commands/CreateWorkspace.php" data-mode="php">PD9waHAKCm5hbWVzcGFjZSBBcHBcQ29uc29sZVxDb21tYW5kczsKCnVzZSBBcHBcVGFza1JvdXRlclxXb3Jrc3BhY2VGYWNhZGU7CnVzZSBJbGx1bWluYXRlXENvbnNvbGVcQ29tbWFuZDsKdXNlIElsbHVtaW5hdGVcU3VwcG9ydFxGYWNhZGVzXEZpbGU7CnVzZSBUYXNrUm91dGVyX1NlcnZpY2VzX1R3aWxpbzsKdXNlIFR3aWxpb1xSZXN0XENsaWVudDsKdXNlIFR3aWxpb1xSZXN0XFRhc2tyb3V0ZXI7CnVzZSBXb3JrZmxvd1J1bGVUYXJnZXQ7CgpjbGFzcyBDcmVhdGVXb3Jrc3BhY2UgZXh0ZW5kcyBDb21tYW5kCnsKICAgIC8qKgogICAgICogVGhlIG5hbWUgYW5kIHNpZ25hdHVyZSBvZiB0aGUgY29uc29sZSBjb21tYW5kLgogICAgICoKICAgICAqIEB2YXIgc3RyaW5nCiAgICAgKi8KICAgIHByb3RlY3RlZCAkc2lnbmF0dXJlID0gJ3dvcmtzcGFjZTpjcmVhdGUKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHtob3N0IDogU2VydmVyIGhvc3RuYW1lIGluIEludGVybmV0fQogICAgICAgICAgICAgICAgICAgICAgICAgICAge2JvYl9waG9uZSA6IFBob25lIG9mIHRoZSBmaXJzdCBhZ2VudCAoQm9iKX0KICAgICAgICAgICAgICAgICAgICAgICAgICAgIHthbGljZV9waG9uZSA6IFBob25lIG9mIHRoZSBzZWNvbmRhcnkgYWdlbnQgKEFsaWNlKX0nOwoKICAgIC8qKgogICAgICogVGhlIGNvbnNvbGUgY29tbWFuZCBkZXNjcmlwdGlvbi4KICAgICAqCiAgICAgKiBAdmFyIHN0cmluZwogICAgICovCiAgICBwcm90ZWN0ZWQgJGRlc2NyaXB0aW9uID0gJ0NyZWF0ZXMgYSBUd2lsaW8gd29ya3NwYWNlIGZvciAyIGNhbGwgYWdlbnRzJzsKCiAgICBwcml2YXRlICRfdHdpbGlvQ2xpZW50OwoKICAgIC8qKgogICAgICogQ3JlYXRlIGEgbmV3IGNvbW1hbmQgaW5zdGFuY2UuCiAgICAgKi8KICAgIHB1YmxpYyBmdW5jdGlvbiBfX2NvbnN0cnVjdChDbGllbnQgJHR3aWxpb0NsaWVudCkKICAgIHsKICAgICAgICBwYXJlbnQ6Ol9fY29uc3RydWN0KCk7CiAgICAgICAgJHRoaXMtPl90d2lsaW9DbGllbnQgPSAkdHdpbGlvQ2xpZW50OwogICAgfQoKICAgIC8qKgogICAgICogRXhlY3V0ZSB0aGUgY29uc29sZSBjb21tYW5kLgogICAgICoKICAgICAqIEByZXR1cm4gbWl4ZWQKICAgICAqLwogICAgcHVibGljIGZ1bmN0aW9uIGhhbmRsZSgpCiAgICB7CiAgICAgICAgJHRoaXMtPmluZm8oIkNyZWF0ZSB3b3Jrc3BhY2UuIik7CiAgICAgICAgJHRoaXMtPmxpbmUoIi0gU2VydmVyOiBcdHskdGhpcy0+YXJndW1lbnQoJ2hvc3QnKX0iKTsKICAgICAgICAkdGhpcy0+bGluZSgiLSBCb2IgcGhvbmU6IFx0eyR0aGlzLT5hcmd1bWVudCgnYm9iX3Bob25lJyl9Iik7CiAgICAgICAgJHRoaXMtPmxpbmUoIi0gQWxpY2UgcGhvbmU6IFx0eyR0aGlzLT5hcmd1bWVudCgnYWxpY2VfcGhvbmUnKX0iKTsKCiAgICAgICAgLy9HZXQgdGhlIGNvbmZpZ3VyYXRpb24KICAgICAgICAkd29ya3NwYWNlQ29uZmlnID0gJHRoaXMtPmNyZWF0ZVdvcmtzcGFjZUNvbmZpZygpOwoKICAgICAgICAvL0NyZWF0ZSB0aGUgd29ya3NwYWNlCiAgICAgICAgJHBhcmFtcyA9IGFycmF5KCk7CiAgICAgICAgJHBhcmFtc1snZnJpZW5kbHlOYW1lJ10gPSAkd29ya3NwYWNlQ29uZmlnLT5uYW1lOwogICAgICAgICRwYXJhbXNbJ2V2ZW50Q2FsbGJhY2tVcmwnXSA9ICR3b3Jrc3BhY2VDb25maWctPmV2ZW50X2NhbGxiYWNrOwogICAgICAgICR3b3Jrc3BhY2UgPSBXb3Jrc3BhY2VGYWNhZGU6OmNyZWF0ZU5ld1dvcmtzcGFjZSgKICAgICAgICAgICAgJHRoaXMtPl90d2lsaW9DbGllbnQtPnRhc2tyb3V0ZXIsCiAgICAgICAgICAgICRwYXJhbXMKICAgICAgICApOwogICAgICAgICR0aGlzLT5hZGRXb3JrZXJzVG9Xb3Jrc3BhY2UoJHdvcmtzcGFjZSwgJHdvcmtzcGFjZUNvbmZpZyk7CiAgICAgICAgJHRoaXMtPmFkZFRhc2tRdWV1ZXNUb1dvcmtzcGFjZSgkd29ya3NwYWNlLCAkd29ya3NwYWNlQ29uZmlnKTsKICAgICAgICAkd29ya2Zsb3cgPSAkdGhpcy0+YWRkV29ya2Zsb3dUb1dvcmtzcGFjZSgkd29ya3NwYWNlLCAkd29ya3NwYWNlQ29uZmlnKTsKCiAgICAgICAgJHRoaXMtPnByaW50U3VjY2Vzc0FuZEluc3RydWN0aW9ucygkd29ya3NwYWNlLCAkd29ya2Zsb3cpOwogICAgfQoKICAgIC8qKgogICAgICogR2V0IHRoZSBqc29uIGNvbmZpZ3VyYXRpb24gb2YgdGhlIFdvcmtzcGFjZQogICAgICoKICAgICAqIEByZXR1cm4gbWl4ZWQKICAgICAqLwogICAgcHVibGljIGZ1bmN0aW9uIGNyZWF0ZVdvcmtzcGFjZUNvbmZpZygpCiAgICB7CiAgICAgICAgJGZpbGVDb250ZW50ID0gRmlsZTo6Z2V0KCJyZXNvdXJjZXMvd29ya3NwYWNlLmpzb24iKTsKICAgICAgICAkaW50ZXJwb2xhdGVkQ29udGVudCA9IHNwcmludGZuKCRmaWxlQ29udGVudCwgJHRoaXMtPmFyZ3VtZW50KCkpOwogICAgICAgIHJldHVybiBqc29uX2RlY29kZSgkaW50ZXJwb2xhdGVkQ29udGVudCk7CiAgICB9CgogICAgLyoqCiAgICAgKiBBZGQgd29ya2VycyB0byB3b3Jrc3BhY2UKICAgICAqCiAgICAgKiBAcGFyYW0gJHdvcmtzcGFjZSBXb3Jrc3BhY2VGYWNhZGUKICAgICAqIEBwYXJhbSAkd29ya3NwYWNlQ29uZmlnIHN0cmluZyB3aXRoIEpzb24KICAgICAqLwogICAgZnVuY3Rpb24gYWRkV29ya2Vyc1RvV29ya3NwYWNlKCR3b3Jrc3BhY2UsICR3b3Jrc3BhY2VDb25maWcpCiAgICB7CiAgICAgICAgJHRoaXMtPmxpbmUoIkFkZCBXb3JrZXJzLiIpOwogICAgICAgICRpZGxlQWN0aXZpdHkgPSAkd29ya3NwYWNlLT5maW5kQWN0aXZpdHlCeU5hbWUoIklkbGUiKQogICAgICAgIG9yIGRpZSgiVGhlIGFjdGl2aXR5ICdJZGxlJyB3YXMgbm90IGZvdW5kLiBXb3JrZXJzIGNhbm5vdCBiZSBhZGRlZC4iKTsKICAgICAgICBmb3JlYWNoICgkd29ya3NwYWNlQ29uZmlnLT53b3JrZXJzIGFzICR3b3JrZXJKc29uKSB7CiAgICAgICAgICAgICRwYXJhbXMgPSBhcnJheSgpOwogICAgICAgICAgICAkcGFyYW1zWydmcmllbmRseU5hbWUnXSA9ICR3b3JrZXJKc29uLT5uYW1lOwogICAgICAgICAgICAkcGFyYW1zWydhY3Rpdml0eVNpZCddID0gJGlkbGVBY3Rpdml0eS0+c2lkOwogICAgICAgICAgICAkcGFyYW1zWydhdHRyaWJ1dGVzJ10gPSBqc29uX2VuY29kZSgkd29ya2VySnNvbi0+YXR0cmlidXRlcyk7CiAgICAgICAgICAgICR3b3Jrc3BhY2UtPmFkZFdvcmtlcigkcGFyYW1zKTsKICAgICAgICB9CiAgICB9CgogICAgLyoqCiAgICAgKiBBZGQgdGhlIFRhc2sgUXVldWVzIHRvIHRoZSB3b3Jrc3BhY2UKICAgICAqCiAgICAgKiBAcGFyYW0gJHdvcmtzcGFjZSBXb3Jrc3BhY2VGYWNhZGUKICAgICAqIEBwYXJhbSAkd29ya3NwYWNlQ29uZmlnIHN0cmluZyB3aXRoIEpzb24KICAgICAqLwogICAgZnVuY3Rpb24gYWRkVGFza1F1ZXVlc1RvV29ya3NwYWNlKCR3b3Jrc3BhY2UsICR3b3Jrc3BhY2VDb25maWcpCiAgICB7CiAgICAgICAgJHRoaXMtPmxpbmUoIkFkZCBUYXNrIFF1ZXVlcy4iKTsKICAgICAgICAkcmVzZXJ2ZWRBY3Rpdml0eSA9ICR3b3Jrc3BhY2UtPmZpbmRBY3Rpdml0eUJ5TmFtZSgiUmVzZXJ2ZWQiKTsKICAgICAgICAkYXNzaWdubWVudEFjdGl2aXR5ID0gJHdvcmtzcGFjZS0+ZmluZEFjdGl2aXR5QnlOYW1lKCJCdXN5Iik7CiAgICAgICAgZm9yZWFjaCAoJHdvcmtzcGFjZUNvbmZpZy0+dGFza19xdWV1ZXMgYXMgJHRhc2tRdWV1ZUpzb24pIHsKICAgICAgICAgICAgJHBhcmFtcyA9IGFycmF5KCk7CiAgICAgICAgICAgICRwYXJhbXNbJ2ZyaWVuZGx5TmFtZSddID0gJHRhc2tRdWV1ZUpzb24tPm5hbWU7CiAgICAgICAgICAgICRwYXJhbXNbJ3RhcmdldFdvcmtlcnMnXSA9ICR0YXNrUXVldWVKc29uLT50YXJnZXRXb3JrZXJzOwogICAgICAgICAgICAkcGFyYW1zWydyZXNlcnZhdGlvbkFjdGl2aXR5U2lkJ10gPSAkcmVzZXJ2ZWRBY3Rpdml0eS0+c2lkOwogICAgICAgICAgICAkcGFyYW1zWydhc3NpZ25tZW50QWN0aXZpdHlTaWQnXSA9ICRhc3NpZ25tZW50QWN0aXZpdHktPnNpZDsKICAgICAgICAgICAgJHdvcmtzcGFjZS0+YWRkVGFza1F1ZXVlKCRwYXJhbXMpOwogICAgICAgIH0KICAgIH0KCiAgICAvKioKICAgICAqIENyZWF0ZSBhbmQgY29uZmlndXJlIHRoZSB3b3JrZmxvdyB0byB1c2UgaW4gdGhlIHdvcmtzcGFjZQogICAgICoKICAgICAqIEBwYXJhbSAkd29ya3NwYWNlIFdvcmtzcGFjZUZhY2FkZQogICAgICogQHBhcmFtICR3b3Jrc3BhY2VDb25maWcgc3RyaW5nIHdpdGggSnNvbgogICAgICoKICAgICAqIEByZXR1cm4gb2JqZWN0IHdpdGggYWRkZWQgd29ya2Zsb3cKICAgICAqLwogICAgZnVuY3Rpb24gYWRkV29ya2Zsb3dUb1dvcmtzcGFjZSgkd29ya3NwYWNlLCAkd29ya3NwYWNlQ29uZmlnKQogICAgewogICAgICAgICR0aGlzLT5saW5lKCJBZGQgV29yZmxvdy4iKTsKICAgICAgICAkd29ya2Zsb3dKc29uID0gJHdvcmtzcGFjZUNvbmZpZy0+d29ya2Zsb3c7CiAgICAgICAgJHBhcmFtcyA9IGFycmF5KCk7CiAgICAgICAgJHBhcmFtc1snZnJpZW5kbHlOYW1lJ10gPSAkd29ya2Zsb3dKc29uLT5uYW1lOwogICAgICAgICRwYXJhbXNbJ2Fzc2lnbm1lbnRDYWxsYmFja1VybCddID0gJHdvcmtmbG93SnNvbi0+Y2FsbGJhY2s7CiAgICAgICAgJHBhcmFtc1sndGFza1Jlc2VydmF0aW9uVGltZW91dCddID0gJHdvcmtmbG93SnNvbi0+dGltZW91dDsKICAgICAgICAkcGFyYW1zWydjb25maWd1cmF0aW9uJ10gPSAkdGhpcy0+Y3JlYXRlV29ya0Zsb3dKc29uQ29uZmlnKAogICAgICAgICAgICAkd29ya3NwYWNlLAogICAgICAgICAgICAkd29ya2Zsb3dKc29uCiAgICAgICAgKTsKICAgICAgICByZXR1cm4gJHdvcmtzcGFjZS0+YWRkV29ya2Zsb3coJHBhcmFtcyk7CiAgICB9CgogICAgLyoqCiAgICAgKiBDcmVhdGUgdGhlIHdvcmtmbG93IGNvbmZpZ3VyYXRpb24gaW4ganNvbiBmb3JtYXQKICAgICAqCiAgICAgKiBAcGFyYW0gJHdvcmtzcGFjZQogICAgICogQHBhcmFtICR3b3Jrc3BhY2VDb25maWcKICAgICAqCiAgICAgKiBAcmV0dXJuIHN0cmluZyBjb25maWd1cmF0aW9uIG9mIHdvcmtmbG93IGluIGpzb24gZm9ybWF0CiAgICAgKi8KICAgIGZ1bmN0aW9uIGNyZWF0ZVdvcmtGbG93SnNvbkNvbmZpZygkd29ya3NwYWNlLCAkd29ya3NwYWNlQ29uZmlnKQogICAgewogICAgICAgICRwYXJhbXMgPSBhcnJheSgpOwogICAgICAgICRkZWZhdWx0VGFza1F1ZXVlID0gJHdvcmtzcGFjZS0+ZmluZFRhc2tRdWV1ZUJ5TmFtZSgiRGVmYXVsdCIpIG9yIGRpZSgKICAgICAgICAgICAgIlRoZSAnRGVmYXVsdCcgdGFzayBxdWV1ZSB3YXMgbm90IGZvdW5kLiBUaGUgV29ya2Zsb3cgY2Fubm90IGJlIGNyZWF0ZWQuIgogICAgICAgICk7CiAgICAgICAgJHNtc1Rhc2tRdWV1ZSA9ICR3b3Jrc3BhY2UtPmZpbmRUYXNrUXVldWVCeU5hbWUoIlNNUyIpIG9yIGRpZSgKICAgICAgICAgICAgIlRoZSAnU01TJyB0YXNrIHF1ZXVlIHdhcyBub3QgZm91bmQuIFRoZSBXb3JrZmxvdyBjYW5ub3QgYmUgY3JlYXRlZC4iCiAgICAgICAgKTsKICAgICAgICAkdm9pY2VUYXNrUXVldWUgPSAkd29ya3NwYWNlLT5maW5kVGFza1F1ZXVlQnlOYW1lKCJWb2ljZSIpIG9yIGRpZSgKICAgICAgICAgICAgIlRoZSAnVm9pY2UnIHRhc2sgcXVldWUgd2FzIG5vdCBmb3VuZC4gVGhlIFdvcmtmbG93IGNhbm5vdCBiZSBjcmVhdGVkLiIKICAgICAgICApOwoKICAgICAgICAkcGFyYW1zWyJkZWZhdWx0X3Rhc2tfcXVldWVfc2lkIl0gPSAkZGVmYXVsdFRhc2tRdWV1ZS0+c2lkOwogICAgICAgICRwYXJhbXNbInNtc190YXNrX3F1ZXVlX3NpZCJdID0gJHNtc1Rhc2tRdWV1ZS0+c2lkOwogICAgICAgICRwYXJhbXNbInZvaWNlX3Rhc2tfcXVldWVfc2lkIl0gPSAkdm9pY2VUYXNrUXVldWUtPnNpZDsKCiAgICAgICAgJGZpbGVDb250ZW50ID0gRmlsZTo6Z2V0KCJyZXNvdXJjZXMvd29ya2Zsb3cuanNvbiIpOwogICAgICAgICRpbnRlcnBvbGF0ZWRDb250ZW50ID0gc3ByaW50Zm4oJGZpbGVDb250ZW50LCAkcGFyYW1zKTsKICAgICAgICByZXR1cm4gJGludGVycG9sYXRlZENvbnRlbnQ7CiAgICB9CgogICAgLyoqCiAgICAgKiBQcmludHMgdGhlIG1lc3NhZ2UgaW5kaWNhdGluZyB0aGUgd29ya3NwYWNlIHdhcyBzdWNjZXNzZnVsbHkgY3JlYXRlZCBhbmQKICAgICAqIHNob3dzIHRoZSBjb21tYW5kcyB0byBleHBvcnQgdGhlIHdvcmtzcGFjZSB2YXJpYWJsZXMgaW50byB0aGUgZW52aXJvbm1lbnQuCiAgICAgKgogICAgICogQHBhcmFtICR3b3Jrc3BhY2UKICAgICAqIEBwYXJhbSAkd29ya2Zsb3cKICAgICAqLwogICAgZnVuY3Rpb24gcHJpbnRTdWNjZXNzQW5kSW5zdHJ1Y3Rpb25zKCR3b3Jrc3BhY2UsICR3b3JrZmxvdykKICAgIHsKICAgICAgICAkaWRsZUFjdGl2aXR5ID0gJHdvcmtzcGFjZS0+ZmluZEFjdGl2aXR5QnlOYW1lKCJJZGxlIikKICAgICAgICBvciBkaWUoIlNvbWVob3cgdGhlIGFjdGl2aXR5ICdJZGxlJyB3YXMgbm90IGZvdW5kLiIpOwogICAgICAgICRzdWNjZXNzTXNnID0gIldvcmtzcGFjZSBcInskd29ya3NwYWNlLT5mcmllbmRseU5hbWV9XCIKICAgICAgICAgd2FzIGNyZWF0ZWQgc3VjY2Vzc2Z1bGx5LiI7CiAgICAgICAgJHRoaXMtPnByaW50VGl0bGUoJHN1Y2Nlc3NNc2cpOwogICAgICAgICR0aGlzLT5saW5lKAogICAgICAgICAgICAiVGhlIGZvbGxvd2luZyB2YXJpYWJsZXMgd2lsbCBiZSBleHBvcnRlZCB0byB0aGUgc3lzdGVtIGVudmlyb25tZW50LiIKICAgICAgICApOwogICAgICAgICRlbmNvbmRlZFdvcmtlcnNQaG9uZSA9IGh0dHBfYnVpbGRfcXVlcnkoJHdvcmtzcGFjZS0+Z2V0V29ya2VyUGhvbmVzKCkpOwogICAgICAgICRlbnZWYXJzID0gWwogICAgICAgICAgICAiV09SS0ZMT1dfU0lEIiA9PiAkd29ya2Zsb3ctPnNpZCwKICAgICAgICAgICAgIlBPU1RfV09SS19BQ1RJVklUWV9TSUQiID0+ICRpZGxlQWN0aXZpdHktPnNpZCwKICAgICAgICAgICAgIldPUktTUEFDRV9TSUQiID0+ICR3b3Jrc3BhY2UtPnNpZCwKICAgICAgICAgICAgIlBIT05FX1RPX1dPUktFUiIgPT4gJGVuY29uZGVkV29ya2Vyc1Bob25lCiAgICAgICAgXTsKICAgICAgICB1cGRhdGVFbnYoJGVudlZhcnMpOwogICAgICAgIGZvcmVhY2ggKCRlbnZWYXJzIGFzICRrZXkgPT4gJHZhbHVlKSB7CiAgICAgICAgICAgICR0aGlzLT53YXJuKCJleHBvcnQgJGtleT0kdmFsdWUiKTsKICAgICAgICB9CiAgICB9CgogICAgLyoqCiAgICAgKiBQcmludHMgYSB0ZXh0IHNlcGFyYXRlZCB1cCBhbmQgZG9Od24gYnkgYSB0b2tlbiBiYXNlZCBsaW5lLCB1c3VhbGx5ICIqIgogICAgICovCiAgICBmdW5jdGlvbiBwcmludFRpdGxlKCR0ZXh0KQogICAgewogICAgICAgICRsaW5lTGVuZ3RoID0gc3RybGVuKCR0ZXh0KSArIDI7CiAgICAgICAgJHRoaXMtPmxpbmUoc3RyX3JlcGVhdCgiKiIsICRsaW5lTGVuZ3RoKSk7CiAgICAgICAgJHRoaXMtPmxpbmUoIiAkdGV4dCAiKTsKICAgICAgICAkdGhpcy0+bGluZShzdHJfcmVwZWF0KCIqIiwgJGxpbmVMZW5ndGgpKTsKICAgIH0KfQo=</textarea>
+<textarea class="saurus-file" data-file="app/TaskRouter/WorkspaceFacade.php" data-mode="php">PD9waHAKCm5hbWVzcGFjZSBBcHBcVGFza1JvdXRlcjsKCgp1c2UgVHdpbGlvXEV4Y2VwdGlvbnNcRGVzZXJpYWxpemVFeGNlcHRpb247CnVzZSBUd2lsaW9cRXhjZXB0aW9uc1xUd2lsaW9FeGNlcHRpb247CgpjbGFzcyBXb3Jrc3BhY2VGYWNhZGUKewogICAgcHJpdmF0ZSAkX3Rhc2tSb3V0ZXJDbGllbnQ7CgogICAgcHJpdmF0ZSAkX3dvcmtzcGFjZTsKCiAgICBwcml2YXRlICRfYWN0aXZpdGllczsKCiAgICBwdWJsaWMgZnVuY3Rpb24gX19jb25zdHJ1Y3QoJHRhc2tSb3V0ZXJDbGllbnQsICR3b3Jrc3BhY2UpCiAgICB7CiAgICAgICAgJHRoaXMtPl90YXNrUm91dGVyQ2xpZW50ID0gJHRhc2tSb3V0ZXJDbGllbnQ7CiAgICAgICAgJHRoaXMtPl93b3Jrc3BhY2UgPSAkd29ya3NwYWNlOwogICAgfQoKICAgIHB1YmxpYyBzdGF0aWMgZnVuY3Rpb24gY3JlYXRlTmV3V29ya3NwYWNlKCR0YXNrUm91dGVyQ2xpZW50LCAkcGFyYW1zKQogICAgewogICAgICAgICR3b3Jrc3BhY2VOYW1lID0gJHBhcmFtc1siZnJpZW5kbHlOYW1lIl07CiAgICAgICAgZm9yZWFjaCAoJHRhc2tSb3V0ZXJDbGllbnQtPndvcmtzcGFjZXMoKS0+cmVhZCgpIGFzICR3b3Jrc3BhY2UpIHsKICAgICAgICAgICAgaWYgKCR3b3Jrc3BhY2UtPmZyaWVuZGx5TmFtZSA9PT0gJHdvcmtzcGFjZU5hbWUpIHsKICAgICAgICAgICAgICAgICR0YXNrUm91dGVyQ2xpZW50LT53b3Jrc3BhY2VzKCkKICAgICAgICAgICAgICAgICAgICAtPmdldENvbnRleHQoJHdvcmtzcGFjZS0+c2lkKS0+ZGVsZXRlKCk7CiAgICAgICAgICAgICAgICBicmVhazsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgICAgICAkd29ya3NwYWNlID0gJHRhc2tSb3V0ZXJDbGllbnQtPndvcmtzcGFjZXMoKQogICAgICAgICAgICAtPmNyZWF0ZSgkd29ya3NwYWNlTmFtZSwgJHBhcmFtcyk7CiAgICAgICAgcmV0dXJuIG5ldyBXb3Jrc3BhY2VGYWNhZGUoJHRhc2tSb3V0ZXJDbGllbnQsICR3b3Jrc3BhY2UpOwogICAgfQoKICAgIHB1YmxpYyBzdGF0aWMgZnVuY3Rpb24gY3JlYXRlQnlTaWQoJHRhc2tSb3V0ZXJDbGllbnQsICR3b3Jrc3BhY2VTaWQpCiAgICB7CiAgICAgICAgJHdvcmtzcGFjZSA9ICR0YXNrUm91dGVyQ2xpZW50LT53b3Jrc3BhY2VzKCktPmdldENvbnRleHQoJHdvcmtzcGFjZVNpZCk7CiAgICAgICAgcmV0dXJuIG5ldyBXb3Jrc3BhY2VGYWNhZGUoJHRhc2tSb3V0ZXJDbGllbnQsICR3b3Jrc3BhY2UpOwogICAgfQoKICAgIC8qKgogICAgICogTWFnaWMgZ2V0dGVyIHRvIGxhenkgbG9hZCBzdWJyZXNvdXJjZXMKICAgICAqCiAgICAgKiBAcGFyYW0gc3RyaW5nICRwcm9wZXJ0eSBTdWJyZXNvdXJjZSB0byByZXR1cm4KICAgICAqCiAgICAgKiBAcmV0dXJuIFxUd2lsaW9cTGlzdFJlc291cmNlIFRoZSByZXF1ZXN0ZWQgc3VicmVzb3VyY2UKICAgICAqCiAgICAgKiBAdGhyb3dzIFxUd2lsaW9cRXhjZXB0aW9uc1xUd2lsaW9FeGNlcHRpb24gRm9yIHVua25vd24gc3VicmVzb3VyY2VzCiAgICAgKi8KICAgIHB1YmxpYyBmdW5jdGlvbiBfX2dldCgkcHJvcGVydHkpCiAgICB7CiAgICAgICAgcmV0dXJuICR0aGlzLT5fd29ya3NwYWNlLT4kcHJvcGVydHk7CiAgICB9CgogICAgLyoqCiAgICAgKiBHZXRzIGFuIGFjdGl2aXR5IGluc3RhbmNlIGJ5IGl0cyBmcmllbmRseSBuYW1lCiAgICAgKgogICAgICogQHBhcmFtICRhY3Rpdml0eU5hbWUgRnJpZW5kbHkgbmFtZSBvZiB0aGUgYWN0aXZpdHkgdG8gc2VhcmNoIGZvcgogICAgICoKICAgICAqIEByZXR1cm4gQWN0aXZpdHlJbnN0YW5jZSBvZiB0aGUgYWN0aXZpdHkgZm91bmQgb3IgbnVsbAogICAgICovCiAgICBmdW5jdGlvbiBmaW5kQWN0aXZpdHlCeU5hbWUoJGFjdGl2aXR5TmFtZSkKICAgIHsKICAgICAgICAkdGhpcy0+Y2FjaGVBY3Rpdml0aWVzQnlOYW1lKCk7CiAgICAgICAgcmV0dXJuICR0aGlzLT5fYWN0aXZpdGllc1skYWN0aXZpdHlOYW1lXTsKICAgIH0KCiAgICAvKioKICAgICAqIENhY2hlcyB0aGUgYWN0aXZpdGllcyBpbiBhbiBhc3NvY2lhdGl2ZSBhcnJheSB3aGljaCBsaW5rcyBmcmllbmRseU5hbWUgd2l0aAogICAgICogaXRzIEFjdGl2aXR5SW5zdGFuY2UKICAgICAqLwogICAgcHJvdGVjdGVkIGZ1bmN0aW9uIGNhY2hlQWN0aXZpdGllc0J5TmFtZSgpCiAgICB7CiAgICAgICAgaWYgKCEkdGhpcy0+X2FjdGl2aXRpZXMpIHsKICAgICAgICAgICAgJHRoaXMtPl9hY3Rpdml0aWVzID0gYXJyYXkoKTsKICAgICAgICAgICAgZm9yZWFjaCAoJHRoaXMtPl93b3Jrc3BhY2UtPmFjdGl2aXRpZXMtPnJlYWQoKSBhcyAkYWN0aXZpdHkpIHsKICAgICAgICAgICAgICAgICR0aGlzLT5fYWN0aXZpdGllc1skYWN0aXZpdHktPmZyaWVuZGx5TmFtZV0gPSAkYWN0aXZpdHk7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9CgogICAgLyoqCiAgICAgKiBMb29rcyBmb3IgYSB3b3JrZXIgYnkgaXRzIFNJRAogICAgICoKICAgICAqIEBwYXJhbSAkc2lkIHN0cmluZyB3aXRoIHRoZSBXb3JrZXIgU0lECiAgICAgKgogICAgICogQHJldHVybiBtaXhlZCB3b3JrZXIgZm91bmQgb3IgbnVsbAogICAgICovCiAgICBmdW5jdGlvbiBmaW5kV29ya2VyQnlTaWQoJHNpZCkKICAgIHsKICAgICAgICByZXR1cm4gJHRoaXMtPl93b3Jrc3BhY2UtPndvcmtlcnMtPmdldENvbnRleHQoJHNpZCk7CiAgICB9CgogICAgLyoqCiAgICAgKiBSZXR1cm5zIGFuIGFzc29jaWF0aXZlIGFycmF5IHdpdGgKICAgICAqCiAgICAgKiBAcmV0dXJuIG1peGVkIGFycmF5IHdpdGggdGhlIHJlbGF0aW9uIHBob25lIC0+IHdvcmtlclNpZAogICAgICovCiAgICBmdW5jdGlvbiBnZXRXb3JrZXJQaG9uZXMoKQogICAgewogICAgICAgICR3b3JrZXJfcGhvbmVzID0gYXJyYXkoKTsKICAgICAgICBmb3JlYWNoICgkdGhpcy0+X3dvcmtzcGFjZS0+d29ya2Vycy0+cmVhZCgpIGFzICR3b3JrZXIpIHsKICAgICAgICAgICAgJHdvcmtlckF0dHJpYnMgPSBqc29uX2RlY29kZSgkd29ya2VyLT5hdHRyaWJ1dGVzKTsKICAgICAgICAgICAgJHdvcmtlcl9waG9uZXNbJHdvcmtlckF0dHJpYnMtPmNvbnRhY3RfdXJpXSA9ICR3b3JrZXItPnNpZDsKICAgICAgICB9CiAgICAgICAgcmV0dXJuICR3b3JrZXJfcGhvbmVzOwogICAgfQoKICAgIC8qKgogICAgICogTG9va3MgZm9yIGEgVGFzayBRdWV1ZSBieSBpdHMgZnJpZW5kbHkgbmFtZQogICAgICoKICAgICAqIEBwYXJhbSAkdGFza1F1ZXVlTmFtZSBzdHJpbmcgd2l0aCB0aGUgZnJpZW5kbHkgbmFtZSBvZiB0aGUgdGFzayBxdWV1ZSB0bwogICAgICogc2VhcmNoIGZvcgogICAgICoKICAgICAqIEByZXR1cm4gdGhlIGFjdGl2aXR5IGZvdW5kIG9yIG51bGwKICAgICAqLwogICAgZnVuY3Rpb24gZmluZFRhc2tRdWV1ZUJ5TmFtZSgkdGFza1F1ZXVlTmFtZSkKICAgIHsKICAgICAgICBmb3JlYWNoICgkdGhpcy0+X3dvcmtzcGFjZS0+dGFza1F1ZXVlcy0+cmVhZCgpIGFzICR0YXNrUXVldWUpIHsKICAgICAgICAgICAgaWYgKCR0YXNrUXVldWUtPmZyaWVuZGx5TmFtZSA9PT0gJHRhc2tRdWV1ZU5hbWUpIHsKICAgICAgICAgICAgICAgIHJldHVybiAkdGFza1F1ZXVlOwogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKICAgIGZ1bmN0aW9uIHVwZGF0ZVdvcmtlckFjdGl2aXR5KCR3b3JrZXIsICRhY3Rpdml0eVNpZCkKICAgIHsKICAgICAgICAkd29ya2VyLT51cGRhdGUoWydhY3Rpdml0eVNpZCcgPT4gJGFjdGl2aXR5U2lkXSk7CiAgICB9CgogICAgLyoqCiAgICAgKiBBZGRzIHdvcmtlcnMgdG8gdGhlIHdvcmtzcGFjZQogICAgICoKICAgICAqIEBwYXJhbSAkcGFyYW1zIG1peGVkIHdpdGggdGhlIGF0dHJpYnV0ZXMgdG8gZGVmaW5lIHRoZSBuZXcgV29ya2VyIGluIHRoZQogICAgICogd29ya3NwYWNlCiAgICAgKgogICAgICogQHJldHVybiB3b3JrZXIgb3IgbnVsbAogICAgICovCiAgICBmdW5jdGlvbiBhZGRXb3JrZXIoJHBhcmFtcykKICAgIHsKICAgICAgICAkdGhpcy0+X3dvcmtzcGFjZS0+d29ya2Vycy0+Y3JlYXRlKCRwYXJhbXNbJ2ZyaWVuZGx5TmFtZSddLCAkcGFyYW1zKTsKICAgIH0KCiAgICAvKioKICAgICAqIEFkZHMgYSBUYXNrIFF1ZXVlIHRvIHRoZSB3b3Jrc3BhY2UKICAgICAqCiAgICAgKiBAcGFyYW0gJHBhcmFtcyBtaXhlZCB3aXRoIGF0dHJpYnV0ZXMgdG8gZGVmaW5lIHRoZSBuZXcgVGFzayBRdWV1ZSBpbiB0aGUKICAgICAqIHdvcmtzcGFjZQogICAgICoKICAgICAqIEByZXR1cm4gVGFza1F1ZXVlIG9yIG51bGwKICAgICAqLwogICAgZnVuY3Rpb24gYWRkVGFza1F1ZXVlKCRwYXJhbXMpCiAgICB7CiAgICAgICAgJHRoaXMtPl93b3Jrc3BhY2UtPnRhc2tRdWV1ZXMtPmNyZWF0ZSgKICAgICAgICAgICAgJHBhcmFtc1snZnJpZW5kbHlOYW1lJ10sCiAgICAgICAgICAgICRwYXJhbXNbJ3Jlc2VydmF0aW9uQWN0aXZpdHlTaWQnXSwKICAgICAgICAgICAgJHBhcmFtc1snYXNzaWdubWVudEFjdGl2aXR5U2lkJ10sCiAgICAgICAgICAgICRwYXJhbXMKICAgICAgICApOwogICAgfQoKCiAgICAvKioKICAgICAqIEFkZHMgYSB3b3JrZmxvdyB0byB0aGUgd29ya3NwYWNlCiAgICAgKgogICAgICogQHBhcmFtICRwYXJhbXMgbWl4ZWQgd2l0aCBhdHRyaWJ1dGVzIHRvIGRlZmluZSB0aGUgbmV3IFdvcmtmbG93IGluIHRoZQogICAgICogd29ya3NwYWNlCiAgICAgKgogICAgICogQHJldHVybiBvYmplY3QgaW5zdGFuY2Ugb2YgV29ya2Zsb3cKICAgICAqLwogICAgZnVuY3Rpb24gYWRkV29ya0Zsb3coJHBhcmFtcykKICAgIHsKICAgICAgICAkY29uZmlnSnNvbiA9ICRwYXJhbXNbImNvbmZpZ3VyYXRpb24iXTsKICAgICAgICAkbmFtZSA9ICRwYXJhbXNbImZyaWVuZGx5TmFtZSJdOwogICAgICAgICRhc3NpZ25tZW50Q2FsbGJhY2tVcmwgPSAkcGFyYW1zWyJhc3NpZ25tZW50Q2FsbGJhY2tVcmwiXTsKICAgICAgICByZXR1cm4gJHRoaXMtPl93b3Jrc3BhY2UtPndvcmtmbG93cy0+Y3JlYXRlKAogICAgICAgICAgICAkbmFtZSwgJGNvbmZpZ0pzb24sICRhc3NpZ25tZW50Q2FsbGJhY2tVcmwsICRwYXJhbXMKICAgICAgICApOwogICAgfQoKfQ==</textarea>
+<textarea class="saurus-file" data-file="app/Http/Controllers/IncomingCallController.php" data-mode="php">PD9waHAKCm5hbWVzcGFjZSBBcHBcSHR0cFxDb250cm9sbGVyczsKCnVzZSBBcHBcSHR0cFxSZXF1ZXN0czsKdXNlIFR3aWxpb1xUd2ltbDsKCi8qKgogKiBDbGFzcyBJbmNvbWluZ0NhbGxDb250cm9sbGVyCiAqCiAqIEBwYWNrYWdlIEFwcFxIdHRwXENvbnRyb2xsZXJzCiAqLwpjbGFzcyBJbmNvbWluZ0NhbGxDb250cm9sbGVyIGV4dGVuZHMgQ29udHJvbGxlcgp7CgogICAgcHVibGljIGZ1bmN0aW9uIHJlc3BvbmRUb1VzZXIoKQogICAgewogICAgICAgICRyZXNwb25zZSA9IG5ldyBUd2ltbCgpOwoKICAgICAgICAkcGFyYW1zID0gYXJyYXkoKTsKICAgICAgICAkcGFyYW1zWydhY3Rpb24nXSA9ICcvY2FsbC9lbnF1ZXVlJzsKICAgICAgICAkcGFyYW1zWydudW1EaWdpdHMnXSA9IDE7CiAgICAgICAgJHBhcmFtc1sndGltZW91dCddID0gMTA7CiAgICAgICAgJHBhcmFtc1snbWV0aG9kJ10gPSAiUE9TVCI7CgogICAgICAgICRwYXJhbXMgPSAkcmVzcG9uc2UtPmdhdGhlcigkcGFyYW1zKTsKICAgICAgICAkcGFyYW1zLT5zYXkoCiAgICAgICAgICAgICdGb3IgUHJvZ3JhbW1hYmxlIFNNUywgcHJlc3Mgb25lLiBGb3IgVm9pY2UsIHByZXNzIGFueSBvdGhlciBrZXkuJwogICAgICAgICk7CgogICAgICAgIHJldHVybiByZXNwb25zZSgkcmVzcG9uc2UpLT5oZWFkZXIoJ0NvbnRlbnQtVHlwZScsICd0ZXh0L3htbCcpOwogICAgfQp9</textarea>
+<textarea class="saurus-file" data-file="app/Http/Controllers/EnqueueCallController.php" data-mode="php">PD9waHAKCm5hbWVzcGFjZSBBcHBcSHR0cFxDb250cm9sbGVyczsKCnVzZSBJbGx1bWluYXRlXEh0dHBcUmVxdWVzdDsKdXNlIFR3aWxpb1xFeGNlcHRpb25zXFR3aWxpb0V4Y2VwdGlvbjsKdXNlIFR3aWxpb1xUd2ltbDsKCgovKioKICogQ2xhc3MgRW5xdWV1ZUNhbGxDb250cm9sbGVyCiAqCiAqIEBwYWNrYWdlIEFwcFxIdHRwXENvbnRyb2xsZXJzCiAqLwpjbGFzcyBFbnF1ZXVlQ2FsbENvbnRyb2xsZXIgZXh0ZW5kcyBDb250cm9sbGVyCnsKCiAgICBwdWJsaWMgZnVuY3Rpb24gZW5xdWV1ZUNhbGwoUmVxdWVzdCAkcmVxdWVzdCkKICAgIHsKICAgICAgICAkd29ya2Zsb3dTaWQgPSBjb25maWcoJ3NlcnZpY2VzLnR3aWxpbycpWyd3b3JrZmxvd1NpZCddCiAgICAgICAgb3IgZGllKCJXT1JLRkxPV19TSUQgaXMgbm90IHNldCBpbiB0aGUgc3lzdGVtIGVudmlyb25tZW50Iik7CgogICAgICAgICRzZWxlY3RQcm9kdWN0SW5zdHJ1Y3Rpb24gPSBuZXcgXFN0ZENsYXNzKCk7CiAgICAgICAgJHNlbGVjdFByb2R1Y3RJbnN0cnVjdGlvbi0+c2VsZWN0ZWRfcHJvZHVjdAogICAgICAgICAgICA9ICR0aGlzLT5fZ2V0U2VsZWN0ZWRQcm9kdWN0KCRyZXF1ZXN0KTsKCiAgICAgICAgJHJlc3BvbnNlID0gbmV3IFR3aW1sKCk7CiAgICAgICAgJGVucXVldWUgPSAkcmVzcG9uc2UtPmVucXVldWUoWyd3b3JrZmxvd1NpZCcgPT4gJHdvcmtmbG93U2lkXSk7CiAgICAgICAgJGVucXVldWUtPnRhc2soanNvbl9lbmNvZGUoJHNlbGVjdFByb2R1Y3RJbnN0cnVjdGlvbikpOwoKICAgICAgICByZXR1cm4gcmVzcG9uc2UoJHJlc3BvbnNlKS0+aGVhZGVyKCdDb250ZW50LVR5cGUnLCAndGV4dC94bWwnKTsKICAgIH0KCiAgICAvKioKICAgICAqIEdldHMgdGhlIHdhbnRlZCBwcm9kdWN0IHVwb24gdGhlIHVzZXIncyBpbnB1dAogICAgICoKICAgICAqIEBwYXJhbSAkcmVxdWVzdCBSZXF1ZXN0IG9mIHRoZSB1c2VyCiAgICAgKgogICAgICogQHJldHVybiBzdHJpbmcgc2VsZWN0ZWQgcHJvZHVjdDogIlByb2dyYW1tYWJsZVNNUyIgb3IgIlByb2dyYW1tYWJsZVZvaWNlIgogICAgICovCiAgICBwcml2YXRlIGZ1bmN0aW9uIF9nZXRTZWxlY3RlZFByb2R1Y3QoJHJlcXVlc3QpCiAgICB7CiAgICAgICAgcmV0dXJuICRyZXF1ZXN0LT5pbnB1dCgiRGlnaXRzIikgPT0gMQogICAgICAgICAgICA/ICJQcm9ncmFtbWFibGVTTVMiCiAgICAgICAgICAgIDogIlByb2dyYW1tYWJsZVZvaWNlIjsKICAgIH0KfQ==</textarea>
+<textarea class="saurus-file" data-file="app/Http/Controllers/CallbackController.php" data-mode="php">PD9waHAKCm5hbWVzcGFjZSBBcHBcSHR0cFxDb250cm9sbGVyczsKCnVzZSBBcHBcRXhjZXB0aW9uc1xUYXNrUm91dGVyRXhjZXB0aW9uOwp1c2UgQXBwXE1pc3NlZENhbGw7CnVzZSBJbGx1bWluYXRlXEh0dHBcUmVxdWVzdDsKdXNlIElsbHVtaW5hdGVcU3VwcG9ydFxGYWNhZGVzXExvZzsKdXNlIFR3aWxpb1xSZXN0XENsaWVudDsKCi8qKgogKiBDbGFzcyBDYWxsYmFja0NvbnRyb2xsZXIgSGFuZGxlcyBjYWxsYmFja3MKICoKICogQHBhY2thZ2UgQXBwXEh0dHBcQ29udHJvbGxlcnMKICovCmNsYXNzIENhbGxiYWNrQ29udHJvbGxlciBleHRlbmRzIENvbnRyb2xsZXIKewogICAgLyoqCiAgICAgKiBDYWxsYmFjayBlbmRwb2ludCBmb3IgVGFzayBhc3NpZ25tZW50cwogICAgICovCiAgICBwdWJsaWMgZnVuY3Rpb24gYXNzaWduVGFzaygpCiAgICB7CiAgICAgICAgJGRlcXVldWVJbnN0cnVjdGlvbk1vZGVsID0gbmV3IFxzdGRDbGFzczsKICAgICAgICAkZGVxdWV1ZUluc3RydWN0aW9uTW9kZWwtPmluc3RydWN0aW9uID0gImRlcXVldWUiOwogICAgICAgICRkZXF1ZXVlSW5zdHJ1Y3Rpb25Nb2RlbC0+cG9zdF93b3JrX2FjdGl2aXR5X3NpZAogICAgICAgICAgICA9IGNvbmZpZygnc2VydmljZXMudHdpbGlvJylbJ3Bvc3RXb3JrQWN0aXZpdHlTaWQnXTsKCiAgICAgICAgJGRlcXVldWVJbnN0cnVjdGlvbkpzb24gPSBqc29uX2VuY29kZSgkZGVxdWV1ZUluc3RydWN0aW9uTW9kZWwpOwoKICAgICAgICByZXR1cm4gcmVzcG9uc2UoJGRlcXVldWVJbnN0cnVjdGlvbkpzb24pCiAgICAgICAgICAgIC0+aGVhZGVyKCdDb250ZW50LVR5cGUnLCAnYXBwbGljYXRpb24vanNvbicpOwogICAgfQoKICAgIC8qKgogICAgICogRXZlbnRzIGNhbGxiYWNrIGZvciBtaXNzZWQgY2FsbHMKICAgICAqCiAgICAgKiBAcGFyYW0gJHJlcXVlc3QgUmVxdWVzdCB3aXRoIHRoZSBpbnB1dCBkYXRhCiAgICAgKiBAcGFyYW0gJHR3aWxpb0NsaWVudCBDbGllbnQgb2YgdGhlIFR3aWxpbyBSZXN0IEFwaQogICAgICovCiAgICBwdWJsaWMgZnVuY3Rpb24gaGFuZGxlRXZlbnQoUmVxdWVzdCAkcmVxdWVzdCwgQ2xpZW50ICR0d2lsaW9DbGllbnQpCiAgICB7CiAgICAgICAgJG1pc3NlZENhbGxFdmVudHMgPSBjb25maWcoJ3NlcnZpY2VzLnR3aWxpbycpWydtaXNzZWRDYWxsRXZlbnRzJ107CgogICAgICAgICRldmVudFR5cGVOYW1lID0gJHJlcXVlc3QtPmlucHV0KCJFdmVudFR5cGUiKTsKCiAgICAgICAgaWYgKGluX2FycmF5KCRldmVudFR5cGVOYW1lLCAkbWlzc2VkQ2FsbEV2ZW50cykpIHsKICAgICAgICAgICAgJHRhc2tBdHRyID0gJHRoaXMtPnBhcnNlQXR0cmlidXRlcygiVGFza0F0dHJpYnV0ZXMiLCAkcmVxdWVzdCk7CiAgICAgICAgICAgIGlmICghZW1wdHkoJHRhc2tBdHRyKSkgewogICAgICAgICAgICAgICAgJHRoaXMtPmFkZE1pc3NpbmdDYWxsKCR0YXNrQXR0cik7CgogICAgICAgICAgICAgICAgJG1lc3NhZ2UgPSBjb25maWcoJ3NlcnZpY2VzLnR3aWxpbycpWyJsZWF2ZU1lc3NhZ2UiXTsKICAgICAgICAgICAgICAgIHJldHVybiAkdGhpcy0+cmVkaXJlY3RUb1ZvaWNlTWFpbCgKICAgICAgICAgICAgICAgICAgICAkdHdpbGlvQ2xpZW50LCAkdGFza0F0dHItPmNhbGxfc2lkLCAkbWVzc2FnZQogICAgICAgICAgICAgICAgKTsKICAgICAgICAgICAgfQogICAgICAgIH0gZWxzZSBpZiAoJ3dvcmtlci5hY3Rpdml0eS51cGRhdGUnID09PSAkZXZlbnRUeXBlTmFtZSkgewogICAgICAgICAgICAkd29ya2VyQWN0aXZpdHlOYW1lID0gJHJlcXVlc3QtPmlucHV0KCJXb3JrZXJBY3Rpdml0eU5hbWUiKTsKICAgICAgICAgICAgaWYgKCR3b3JrZXJBY3Rpdml0eU5hbWUgPT09ICJPZmZsaW5lIikgewogICAgICAgICAgICAgICAgJHdvcmtlckF0dHIgPSAkdGhpcy0+cGFyc2VBdHRyaWJ1dGVzKCJXb3JrZXJBdHRyaWJ1dGVzIiwgJHJlcXVlc3QpOwogICAgICAgICAgICAgICAgJHRoaXMtPm5vdGlmeU9mZmxpbmVTdGF0dXNUb1dvcmtlcigKICAgICAgICAgICAgICAgICAgICAkd29ya2VyQXR0ci0+Y29udGFjdF91cmksICR0d2lsaW9DbGllbnQKICAgICAgICAgICAgICAgICk7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9CgogICAgcHJvdGVjdGVkIGZ1bmN0aW9uIHBhcnNlQXR0cmlidXRlcygkbmFtZSwgJHJlcXVlc3QpCiAgICB7CiAgICAgICAgJGF0dHJKc29uID0gJHJlcXVlc3QtPmlucHV0KCRuYW1lKTsKICAgICAgICByZXR1cm4ganNvbl9kZWNvZGUoJGF0dHJKc29uKTsKICAgIH0KCiAgICBwcm90ZWN0ZWQgZnVuY3Rpb24gYWRkTWlzc2luZ0NhbGwoJHRhc2spCiAgICB7CiAgICAgICAgJG1pc3NlZENhbGwgPSBuZXcgTWlzc2VkQ2FsbCgKICAgICAgICAgICAgWwogICAgICAgICAgICAic2VsZWN0ZWRfcHJvZHVjdCIgPT4gJHRhc2stPnNlbGVjdGVkX3Byb2R1Y3QsCiAgICAgICAgICAgICJwaG9uZV9udW1iZXIiID0+ICR0YXNrLT5mcm9tCiAgICAgICAgICAgIF0KICAgICAgICApOwogICAgICAgICRtaXNzZWRDYWxsLT5zYXZlKCk7CiAgICAgICAgTG9nOjppbmZvKCJOZXcgbWlzc2VkIGNhbGwgYWRkZWQ6ICRtaXNzZWRDYWxsIik7CiAgICB9CgogICAgcHJvdGVjdGVkIGZ1bmN0aW9uIHJlZGlyZWN0VG9Wb2ljZU1haWwoJHR3aWxpb0NsaWVudCwgJGNhbGxTaWQsICRtZXNzYWdlKQogICAgewogICAgICAgICRtaXNzZWRDYWxsc0VtYWlsID0gY29uZmlnKCdzZXJ2aWNlcy50d2lsaW8nKVsnbWlzc2VkQ2FsbHNFbWFpbCddCiAgICAgICAgb3IgZGllKCJNSVNTRURfQ0FMTFNfRU1BSUxfQUREUkVTUyBpcyBub3Qgc2V0IGluIHRoZSBlbnZpcm9ubWVudCIpOwoKICAgICAgICAkY2FsbCA9ICR0d2lsaW9DbGllbnQtPmNhbGxzLT5nZXRDb250ZXh0KCRjYWxsU2lkKTsKICAgICAgICBpZiAoISRjYWxsKSB7CiAgICAgICAgICAgIHRocm93IG5ldyBUYXNrUm91dGVyRXhjZXB0aW9uKCJUaGUgc3BlY2lmaWVkIGNhbGwgZG9lcyBub3QgZXhpc3QiKTsKICAgICAgICB9CgogICAgICAgICRlbmNvZGVkTXNnID0gdXJsZW5jb2RlKCRtZXNzYWdlKTsKICAgICAgICAkdHdpbWxldFVybCA9ICJodHRwOi8vdHdpbWxldHMuY29tL3ZvaWNlbWFpbD8KICAgICAgICBFbWFpbD0kbWlzc2VkQ2FsbHNFbWFpbCZNZXNzYWdlPSRlbmNvZGVkTXNnIjsKICAgICAgICAkY2FsbC0+dXBkYXRlKFsidXJsIiA9PiAkdHdpbWxldFVybCwgIm1ldGhvZCIgPT4gIlBPU1QiXSk7CiAgICB9CgogICAgcHJvdGVjdGVkIGZ1bmN0aW9uIG5vdGlmeU9mZmxpbmVTdGF0dXNUb1dvcmtlcigkd29ya2VyUGhvbmUsICR0d2lsaW9DbGllbnQpCiAgICB7CiAgICAgICAgJHR3aWxpb051bWJlciA9IGNvbmZpZygnc2VydmljZXMudHdpbGlvJylbJ251bWJlciddCiAgICAgICAgb3IgZGllKCJUV0lMSU9fTlVNQkVSIGlzIG5vdCBzZXQgaW4gdGhlIHN5c3RlbSBlbnZpcm9ubWVudCIpOwoKICAgICAgICAkcGFyYW1zID0gWyJib2R5IiA9PiBjb25maWcoJ3NlcnZpY2VzLnR3aWxpbycpWyJvZmZsaW5lTWVzc2FnZSJdXTsKCiAgICAgICAgJHR3aWxpb0NsaWVudC0+YWNjb3VudC0+bWVzc2FnZXMtPmNyZWF0ZSgKICAgICAgICAgICAgJHdvcmtlclBob25lLAogICAgICAgICAgICAkdHdpbGlvTnVtYmVyLAogICAgICAgICAgICAkcGFyYW1zCiAgICAgICAgKTsKICAgIH0KCn0K</textarea>
+<textarea class="saurus-file" data-file="app/Http/Controllers/MessageController.php" data-mode="php">PD9waHAKCm5hbWVzcGFjZSBBcHBcSHR0cFxDb250cm9sbGVyczsKCnVzZSBBcHBcRXhjZXB0aW9uc1xUYXNrUm91dGVyRXhjZXB0aW9uOwp1c2UgSWxsdW1pbmF0ZVxIdHRwXFJlcXVlc3Q7CnVzZSBBcHBcVGFza1JvdXRlclxXb3Jrc3BhY2VGYWNhZGU7CnVzZSBUd2lsaW9cVHdpbWw7CgpjbGFzcyBNZXNzYWdlQ29udHJvbGxlciBleHRlbmRzIENvbnRyb2xsZXIKewoKICAgIHB1YmxpYyBmdW5jdGlvbiBoYW5kbGVJbmNvbWluZ01lc3NhZ2UoCiAgICAgICAgUmVxdWVzdCAkcmVxdWVzdCwgV29ya3NwYWNlRmFjYWRlICR3b3Jrc3BhY2UKICAgICkgewogICAgICAgICRjbWQgPSBzdHJ0b2xvd2VyKCRyZXF1ZXN0LT5pbnB1dCgiQm9keSIpKTsKICAgICAgICAkZnJvbU51bWJlciA9ICRyZXF1ZXN0LT5pbnB1dCgiRnJvbSIpOwogICAgICAgICRuZXdXb3JrZXJTdGF0dXMgPSAoJGNtZCA9PT0gIm9mZiIpID8gIk9mZmxpbmUiIDogIklkbGUiOwoKICAgICAgICAkcmVzcG9uc2UgPSBuZXcgVHdpbWwoKTsKCiAgICAgICAgdHJ5IHsKICAgICAgICAgICAgJHdvcmtlciA9ICR0aGlzLT5nZXRXb3JrZXJCeVBob25lKCRmcm9tTnVtYmVyLCAkd29ya3NwYWNlKTsKICAgICAgICAgICAgJHRoaXMtPnVwZGF0ZVdvcmtlclN0YXR1cygkd29ya2VyLCAkbmV3V29ya2VyU3RhdHVzLCAkd29ya3NwYWNlKTsKCiAgICAgICAgICAgICRyZXNwb25zZS0+c21zKCJZb3VyIHN0YXR1cyBoYXMgY2hhbmdlZCB0byB7JG5ld1dvcmtlclN0YXR1c30iKTsKCiAgICAgICAgfSBjYXRjaCAoVGFza1JvdXRlckV4Y2VwdGlvbiAkZSkgewogICAgICAgICAgICAkcmVzcG9uc2UtPnNtcygkZS0+Z2V0TWVzc2FnZSgpKTsKICAgICAgICB9CgogICAgICAgIHJldHVybiByZXNwb25zZSgkcmVzcG9uc2UpLT5oZWFkZXIoJ0NvbnRlbnQtVHlwZScsICd0ZXh0L3htbCcpOwogICAgfQoKICAgIGZ1bmN0aW9uIHVwZGF0ZVdvcmtlclN0YXR1cygkd29ya2VyLCAkc3RhdHVzLCAkd29ya3NwYWNlKQogICAgewogICAgICAgICR3YW50ZWRBY3Rpdml0eSA9ICR3b3Jrc3BhY2UtPmZpbmRBY3Rpdml0eUJ5TmFtZSgkc3RhdHVzKTsKICAgICAgICAkd29ya3NwYWNlLT51cGRhdGVXb3JrZXJBY3Rpdml0eSgkd29ya2VyLCAkd2FudGVkQWN0aXZpdHktPnNpZCk7CiAgICB9CgogICAgcHJvdGVjdGVkIGZ1bmN0aW9uIGdldFdvcmtlckJ5UGhvbmUoJHBob25lLCAkd29ya3NwYWNlKQogICAgewogICAgICAgICRwaG9uZVRvV29ya2VyU3RyID0gY29uZmlnKCdzZXJ2aWNlcy50d2lsaW8nKVsncGhvbmVUb1dvcmtlciddOwogICAgICAgIHBhcnNlX3N0cigkcGhvbmVUb1dvcmtlclN0ciwgJHBob25lVG9Xb3JrZXJBcnJheSk7CiAgICAgICAgaWYgKGVtcHR5KCRwaG9uZVRvV29ya2VyQXJyYXlbJHBob25lXSkpIHsKICAgICAgICAgICAgdGhyb3cgbmV3IFRhc2tSb3V0ZXJFeGNlcHRpb24oIllvdSBhcmUgbm90IGEgdmFsaWQgd29ya2VyIik7CiAgICAgICAgfQogICAgICAgIHJldHVybiAkd29ya3NwYWNlLT5maW5kV29ya2VyQnlTaWQoJHBob25lVG9Xb3JrZXJBcnJheVskcGhvbmVdKTsKICAgIH0KfQ==</textarea>
+</div>
+</div><div class="saurus-overview"><ul></ul></div></div><div class="saurus-code"><div class="file-path"><span class="crumb-container"></span><i class="fa fa-fw fa-folder"></i></div><div class="saurus-editor"></div></div><div class="saurus-explorer"><div class="saurus-file-list"></div><a href="https://github.com/TwilioDevEd/task-router-laravel" target="_blank" class="explorer-get-code"> <i class="fa fa-lg fa-github-square"> </i>View Code on GitHub</a></div></div></div></div><script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script><script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script><script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script><script src="ace/ace.js"></script><script src="ace/theme-monokai.js"></script><script src="viewsaurus.js"></script></body></html>

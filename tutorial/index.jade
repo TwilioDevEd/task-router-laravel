@@ -1,0 +1,351 @@
+.chapter(data-title='TaskRouter Servlets')
+  .step(data-title='Application Overview',
+    data-file='resources/workspace.json')
+    :markdown
+      ## Application Overview
+
+      In this tutorial we will show how to automate the routing of calls from
+      customers to your support agents. Customers will be able to select a
+      product and wait while TaskRouter tries to contact a product
+      specialist for the best support experience. If no one is available, our
+      application will save the customer's number and selected product so
+      an agent can call them back later on.
+
+      This is what the application does at a high level:
+
+      1. Configure a workspace using the Twilio REST API.
+      1. Listen for incoming calls and let the user select a product with the dial pad.
+      1. Create a Task with the selected product and let TaskRouter handle it.
+      1. Store missed calls so agents can return the call to customers.
+
+      ---
+      **See Also:**
+      * [Laravel Documentation](//laravel.com/docs/5.2/)
+      * [Getting Started with Twilio TaskRouter](//www.twilio.com/docs/quickstart/php/taskrouter)
+
+  .step(data-title='Configuring the Workspace',
+    data-file='resources/workspace.json')
+    :markdown
+      ## Configuring the Workspace
+
+      In order to instruct TaskRouter to handle the Tasks, we need to
+      configure a Workspace. We can do this in the [TaskRouter
+      Console](//www.twilio.com/console/taskrouter/workspaces) or
+      programmatically using the [TaskRouter REST API][api-main].
+
+      A [Workspace][workspaces-doc] is the container element for any TaskRouter
+      application. The elements are:
+      * [Tasks][tasks-doc] - Represents a customer trying to contact an agent.
+      * [Workers][workers-doc] - The agents responsible for handling Tasks.
+      * [Task Queues][queues-doc] - Holds Tasks to be consumed by a set of Workers.
+      * [Workflows][workflows-doc] - Responsible for placing Tasks into Task Queues.
+      * [Activities][activities-doc] - Possible states of a Worker, e.g. Idle,
+      Offline, Busy.
+
+      In order to build a client for this API, we need as system variables a
+      `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` which you can find on [Twilio
+      Console](//www.twilio.com/console). The artisan command `workspace:create`
+      creates a `Twilio\Rest\Client`, which is provided by the
+      [Twilio PHP library][twilio-php-doc]. This client is used by
+      [WorkspaceFacade][workspace-facade] which encapsulates all logic related to
+      the class `Twilio\Rest\Taskrouter\V1\WorkspaceContext`.
+
+      ---
+      **See Also:**
+      * [TaskRouter: REST API Reference][api-main]
+      * [TaskRouter: PHP API Documentation][twilio-php-doc]
+
+      [workspace-facade]: //github.com/TwilioDevEd/task-router-laravel/blob/master/app/TaskRouter/WorkspaceFacade.php
+      [twilio-php-doc]: https://twilio.github.io/twilio-php
+      [api-main]: https://www.twilio.com/docs/api/taskrouter/rest-api
+      [workspaces-doc]: https://www.twilio.com/docs/api/taskrouter/workspaces
+      [workflows-doc]: https://www.twilio.com/docs/api/taskrouter/workflows
+      [queues-doc]: https://www.twilio.com/docs/api/taskrouter/taskqueues
+      [tasks-doc]: https://www.twilio.com/docs/api/taskrouter/commands
+      [workers-doc]: https://www.twilio.com/docs/api/taskrouter/workers
+      [activities-doc]: https://www.twilio.com/docs/api/taskrouter/activities
+
+  .step(data-title='The CreateWorkspace Command',
+    data-file='app/Console/Commands/CreateWorkspace.php',
+    data-highlight='15-23,43-65,71')
+    :markdown
+      ## The CreateWorkspace Artisan Command
+
+      In this application the [Artisan command][artisan-command] `workspace:create` 
+      is used to orchestrate calls to our `WorkspaceFacade` class in order to 
+      build a Workspace from scratch. `CreateWorkspace` is the php class behind 
+      the Artisan command. It uses data provided by `workspace.json` and expects 
+      3 arguments:
+
+      1. `host` - A public URL to which Twilio can send requests. This can be
+         either a cloud service or [ngrok][ngrok-docs], which can expose a local
+         application to the internet.
+      1. `bob_phone` - The telephone number of Bob, the Programmable SMS specialist.
+      1. `alice_phone` - Same for Alice, the Programmable Voice specialist.
+
+      The function `createWorkspaceConfig` is used to load the
+      configuration of the workspace from `workspace.json`.
+
+      ---
+      **See Also:**
+      * [More about Artisan Development][artisan-command]
+      * [Ngrok documentation][ngrok-docs]
+      * [TaskRouter PHP Quickstart Overview](//www.twilio.com/docs/quickstart/php/taskrouter)
+
+      [artisan-command]: //laravel.com/docs/4.2/commands#introduction
+      [ngrok-docs]: //ngrok.com/docs
+
+  .step(data-title='Creating a Workspace',
+    data-file='app/TaskRouter/WorkspaceFacade.php',
+    data-highlight='23-36')
+    :markdown
+      # Creating a Workspace
+
+      Before creating a workspace, we need to delete any others with the same 
+      `friendlyName` as identifier. In order to create a workspace we need
+      to provide a `friendlyName`, and a `eventCallbackUrl` which contains an 
+      url to be called every time an event is triggered in the workspace.
+      
+      ---
+      **See Also:**
+      * [TaskRouter REST API: Workspaces](//www.twilio.com/docs/api/taskrouter/workspaces)
+
+  .step(data-title='Creating the Workers',
+    data-file='app/Console/Commands/CreateWorkspace.php',
+    data-highlight='56,66,85-103')
+    :markdown
+      # Creating the Workers
+
+      We'll create two workers, Bob and Alice. They each have two attributes:
+      `contact_uri` a phone number and `products`, a list of products
+      each worker is specialized in. We also need to specify an `activity_sid`
+      and a name for each worker. The selected activity will define the status 
+      of the worker.
+      
+      ---
+      **See Also:**
+      * [TaskRouter REST API: Workers](//www.twilio.com/docs/api/taskrouter/workers)
+
+  .step(data-title='Creating the Task Queues',
+    data-file='app/Console/Commands/CreateWorkspace.php',
+    data-highlight='56,67,105-124')
+    :markdown
+      # Creating the Task Queues
+
+      Next, we set up the Task Queues. Each with a name and a `targetWorkers` property,
+      which is an expression to match Workers. Our Task Queues are:
+
+      1. `SMS` - Will target Workers specialized in Programmable SMS, such
+         as Bob, using the expression `"products HAS \"ProgrammableSMS\""`.
+      1. `Voice` - Will do the same for Programmable Voice Workers, such
+         as Alice, using the expression `"products HAS \"ProgrammableVoice\""`.
+      1. `All` - This queue targets all users and can be used when there are
+         no specialist around for the chosen product. We can use the `"1==1"`
+         expression here.
+      
+      ---
+      **See Also:**
+      * [TaskRouter REST API: Task Queues](//www.twilio.com/docs/api/taskrouter/taskqueues)
+      * [TargetWorkers's Expressions](//www.twilio.com/docs/api/taskrouter/taskqueues#target-workers)
+
+ .step(data-title='Creating a Workflow',
+   data-file='app/Console/Commands/CreateWorkspace.php',
+   data-highlight='56,68,126-147')
+   :markdown
+     # Creating a Workflow
+
+     Finally, we set up the Workflow using the following parameters:
+
+     1. `friendlyName` as the name of a Workflow.
+     1. `assignmentCallbackUrl` as the public URL where a request will be made
+        when this Workflow assigns a Task to a Worker. We will learn how to
+        implement it on the next steps.
+     1. `taskReservationTimeout` as the maximum time we want to wait until a Worker
+        handles a Task.
+     1. `configuration` which is a set of rules for placing Task into Task Queues.
+        The routing configuration will take a Task's attribute and match this with Task
+        Queues. This application's Workflow rules are defined as:
+        1. `selected_product=="ProgrammableSMS"` expression for `SMS` Task
+        Queue. This expression will match any Task with `ProgrammableSMS` as
+        the `selected_product` attribute.
+        1. `selected_product=="ProgrammableVoice` expression for `Voice`
+        Task Queue.
+     
+     ---
+     **See Also:**
+     * [TaskRouter REST API: Workflows](//www.twilio.com/docs/api/taskrouter/workflows)
+
+.step(data-title="Handling Twilio's Request",
+  data-file='app/Http/Controllers/IncomingCallController.php',
+  data-highlight='8-33')
+  :markdown
+    ## Handling Twilio's Request
+
+    Right after receiving a call, Twilio will send a request to the
+    URL specified on the [number's configuration](//www.twilio.com/console/phone-numbers/incoming).
+
+    The endpoint will then process the request and generate a TwiML response.
+    We'll use the [Say](//www.twilio.com/docs/api/twiml/say) verb to give the user
+    product alternatives, and a key they can press in order to select one. 
+    The [Gather](//www.twilio.com/docs/api/twiml/gather) verb allows us to
+    capture the user's key press.
+
+    ---
+    **See Also:**
+    * [Twilio webhooks](//www.twilio.com/platform/webhooks)
+    * [TwiML Voice: Your Response](//www.twilio.com/docs/api/twiml/your_response)
+    * [TwiML Voice: <Say> verb](//www.twilio.com/docs/api/twiml/say)
+    * [TwiML Voice: <Gather> verb](//www.twilio.com/docs/api/twiml/gather)
+
+ .step(data-title='Creating a Task',
+  data-file='app/Http/Controllers/EnqueueCallController.php',
+  data-highlight='10-47')
+  :markdown
+    ## Creating a Task
+
+    This is the endpoint set as the `action` URL on the `Gather` verb on the
+    previous step. A request is made to this endpoint when the user presses
+    a key during the call.
+    This request has a `Digits` parameter that holds the pressed keys.
+    A `Task` will be created based on the pressed digit with the
+    `selected_product` as an attribute. The Workflow will take this Task's
+    attributes and match them with the [configured
+    expressions](//www.twilio.com/docs/api/taskrouter/expression-syntax)
+    in order to find a corresponding Task Queue, so an appropriate available
+    Worker can be assigned to handle it.
+
+    We use the [`Enqueue` verb][enqueue-verb] with a `workflowSid` attribute
+    to [integrate with TaskRouter][integration-doc]. Then the voice call will
+    be put on hold while TaskRouter tries to find an available Worker to
+    handle this Task.
+
+    ---
+    **See Also:**
+    * [TwiML Voice: Twilio's Request](//www.twilio.com/docs/api/twiml/twilio_request)
+    * [TwiML Voice: <Gather> callback attributes](//www.twilio.com/docs/api/twiml/gather#attributes-action-parameters)
+    * [TwiML Voice: <Enqueue> verb][enqueue-verb]
+    * [TaskRouter: Using <Enqueue> to route calls with TaskRouter](//www.twilio.com/docs/api/taskrouter/twiml-integration#using-enqueue-to-route-calls-with-taskrouter)
+
+    [integration-doc]: //www.twilio.com/docs/api/taskrouter/twiml-integration#using-enqueue-to-route-calls-with-taskrouter
+    [enqueue-verb]: //www.twilio.com/docs/api/twiml/enqueue
+
+ .step(data-title='Assigning a Worker',
+    data-file='app/Http/Controllers/CallbackController.php',
+    data-highlight='18-32')
+    :markdown
+      ## Assigning a Worker
+
+      When TaskRouter selects a Worker, it does the following:
+
+      1. The Task's Assignment Status is set to `reserved`.
+      1. A [Reservation instance][reservation-instance-doc] is generated,
+         linking the Task to the selected Worker.
+      1. At the same time the Reservation is created, a POST request is
+      made to the Workflow's AssignmentCallbackURL, which was configured using
+      the Artisan command [`workspace:create`][workspace-command-github].
+      This request includes the full details of the Task, the selected Worker,
+      and the Reservation.
+
+      Handling this [Assignment Callback][assignment-callback] is a key
+      component of building a TaskRouter application as we can instruct how the
+      Worker will handle a Task. We could send a text, e-mail, push
+      notifications or make a call.
+
+      Since we created this Task during a voice call with an `Enqueue` verb,
+      let's [instruct TaskRouter to dequeue][dequeue-section] the call and dial
+      a Worker. If we do not specify a `to` parameter with a
+      phone number, TaskRouter will pick the Worker's `contact_uri` attribute.
+
+      We also send a `post_work_activity_sid` which will tell TaskRouter which
+      [Activity][activities] to assign this worker after the call ends.
+
+      ---
+      **See Also:**
+      * [Assigning Commands to Workers: Handling Assignment Callbacks][assignment-callback]
+      * [Assigning Commands to Workers: Dequeue a call from a TwiML queue][dequeue-section]
+      * [TaskRouter Quickstart: Understanding Activities](//www.twilio.com/docs/quickstart/php/taskrouter/setup-understanding-activities)
+
+      [reservation-instance-doc]: //www.twilio.com/docs/api/taskrouter/reservations
+      [workspace-command-github]: //github.com/TwilioDevEd/task-router-laravel/blob/master/app/Console/Commands/CreateWorkspace.php
+      [assignment-callback]: //www.twilio.com/docs/api/taskrouter/handling-assignment-callbacks
+      [dequeue-section]: //www.twilio.com/docs/api/taskrouter/handling-assignment-callbacks#dequeue-call
+      [activities]: //www.twilio.com/docs/quickstart/ruby/taskrouter/setup-understanding-activities
+
+  .step(data-title='Collecting Missed Calls',
+    data-file='app/Http/Controllers/CallbackController.php',
+    data-highlight='34-65,73-99')
+    :markdown
+      ## Collecting Missed Calls
+
+      This endpoint will be called after each [TaskRouter Event][event-types]
+      is triggered. In our application, we are trying to collect missed calls,
+      so we would like to handle the `workflow.timeout` event. This event is
+      triggered when the Task waits more than the limit set on Workflow
+      Configuration-- or rather when no worker is available.
+
+      Here we use TwilioRestClient to route this call to a [Voicemail
+      Twimlet][voicemail-twimlet]. Twimlets are tiny web applications for
+      voice.  This one will generate a `TwiML` response using `Say` verb and
+      record a message using `Record` verb. The recorded message will then be
+      transcribed and sent to the email address configured.
+
+      We are also listening for `task.canceled`. This is triggered
+      when the customer hangs up before being assigned to an agent, therefore
+      canceling the task. Capturing this event allows us to collect the
+      information from the customers that hang up before the Workflow times out.
+
+      ---
+      **See Also:**
+      * [TaskRouter: Events](//www.twilio.com/docs/api/taskrouter/events)
+      * [TaskRouter: Event types][event-types]
+      * [Twilio Twimlets][twimlets]
+
+      [event-types]: //www.twilio.com/docs/api/taskrouter/events#event-types
+      [twimlets]:  //www.twilio.com/labs/twimlets
+      [voicemail-twimlet]: //www.twilio.com/labs/twimlets/voicemail
+
+  .step(data-title="Changing a Worker's Activity", 
+    data-file='app/Http/Controllers/MessageController.php',
+    data-highlight='10-50')
+    :markdown
+      ## Changing a Worker's Activity
+
+      We have created this endpoint, so a worker can send an SMS message to the 
+      support line with the command "On" or "Off" to change their availability 
+      status.
+
+      This is important as a worker's activity will change to `Offline` when 
+      they miss a call. When this happens, they receive an SMS letting them know
+      that their activity has changed, and that they can reply with the `On` 
+      command to make themselves available for incoming calls again.
+
+      ---
+      **See Also:**
+      * [TaskRouter: Events](//www.twilio.com/docs/api/taskrouter/events)
+      * [TaskRouter: Event types][event-types]
+
+      [event-types]: //www.twilio.com/docs/api/taskrouter/events#event-types
+      [voicemail-twimlet]: //www.twilio.com/labs/twimlets/voicemail
+
+  .step
+    :markdown
+      ## Where to next?
+
+      That's it! We have just implemented employee directory using Laravel.
+      Now you can get your employee's information by texting a Twilio number.
+
+      If you're a PHP developer working with Twilio, you might also enjoy these
+      tutorials:
+
+      [**Automated-Survey**](//www.twilio.com/docs/tutorials/walkthrough/automated-survey/php/laravel)
+
+      Instantly collect structured data from your users with a survey conducted
+      over a call or SMS text messages. Let's get started!
+
+      [**ETA-Notifications**](//www.twilio.com/docs/tutorials/walkthrough/eta-notifications/php/laravel)
+
+      Learn how to implement ETA Notifications using Laravel and Twilio.
+
+      Thanks for checking this tutorial out! If you have any feedback
+      to share with us, we'd love to hear it.
+      [Contact the Twilio Developer Education Team](mailto:deved-oss@twilio.com) to let us know what you think.
