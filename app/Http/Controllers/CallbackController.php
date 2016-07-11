@@ -20,12 +20,12 @@ class CallbackController extends Controller
      */
     public function assignTask()
     {
-        $deQueueModel = new \stdClass;
-        $deQueueModel->instruction = "dequeue";
-        $deQueueModel->post_work_activity_sid
+        $dequeueInstructionModel = new \stdClass;
+        $dequeueInstructionModel->instruction = "dequeue";
+        $dequeueInstructionModel->post_work_activity_sid
             = config('services.twilio')['postWorkActivitySid'];
 
-        $dequeueInstructionJson = json_encode($deQueueModel);
+        $dequeueInstructionJson = json_encode($dequeueInstructionModel);
 
         return response($dequeueInstructionJson)
             ->header('Content-Type', 'application/json');
