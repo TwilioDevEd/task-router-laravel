@@ -1,0 +1,41 @@
+{
+  "task_routing": {
+    "filters": [
+      {
+        "expression": "selected_product==\"ProgrammableSMS\"",
+        "targets": [
+          {
+            "queue": "%(sms_task_queue_sid)s",
+            "priority": 5,
+            "timeout": 30
+          },
+          {
+            "queue": "%(default_task_queue_sid)s",
+            "expression": "1==1",
+            "priority": "1",
+            "timeout": "30"
+          }
+        ]
+      },
+      {
+        "expression": "selected_product==\"ProgrammableVoice\"",
+        "targets": [
+          {
+            "queue": "%(voice_task_queue_sid)s",
+            "priority": 5,
+            "timeout": 30
+          },
+          {
+            "queue": "%(default_task_queue_sid)s",
+            "expression": "1==1",
+            "priority": "1",
+            "timeout": "30"
+          }
+        ]
+      }
+    ],
+    "default_filter": {
+      "queue": "%(default_task_queue_sid)s"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+/** Site style **/
+footer {
+    bottom: 10px;
+}
+
+footer i {
+    color:#ff0000;
+}
+
+footer p{
+    text-align: center;
+}
+
+.body-content {
+    padding-left: 2%;
+    padding-right: 2%;
+}
+
+.media{
+    display: block;
+    margin: 1em 0;
+    max-width: 320px;
+}
+
+.media:active{
+    max-width: 100vw;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    max-height: 100vh;
+    transition-duration: 3s, 5s, 3s, 5s;
+    margin: 0px auto;
+}
+
+.body-content{
+    margin: 1em auto 2em;
+}
