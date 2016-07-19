@@ -3,9 +3,6 @@
 namespace App\TaskRouter;
 
 
-use Twilio\Exceptions\DeserializeException;
-use Twilio\Exceptions\TwilioException;
-
 class WorkspaceFacade
 {
     private $_taskRouterClient;
@@ -23,12 +20,13 @@ class WorkspaceFacade
     public static function createNewWorkspace($taskRouterClient, $params)
     {
         $workspaceName = $params["friendlyName"];
-        foreach ($taskRouterClient->workspaces()->read() as $workspace) {
-            if ($workspace->friendlyName === $workspaceName) {
-                $taskRouterClient->workspaces()
-                    ->getContext($workspace->sid)->delete();
-                break;
-            }
+        $existingWorkspace = $taskRouterClient->workspaces()->read(
+            array(
+                "friendlyName" => $workspaceName
+            )
+        );
+        if ($existingWorkspace) {
+            $existingWorkspace[1]->delete();
         }
         $workspace = $taskRouterClient->workspaces()
             ->create($workspaceName, $params);
@@ -119,10 +117,13 @@ class WorkspaceFacade
      */
     function findTaskQueueByName($taskQueueName)
     {
-        foreach ($this->_workspace->taskQueues->read() as $taskQueue) {
-            if ($taskQueue->friendlyName === $taskQueueName) {
-                return $taskQueue;
-            }
+        $result = $this->_workspace->taskQueues->read(
+            array(
+                "friendlyName" => $taskQueueName
+            )
+        );
+        if ($result) {
+            return $result[1];
         }
     }
 
