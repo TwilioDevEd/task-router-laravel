@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\TaskRouter\WorkspaceFacade;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Twilio\Rest\Client;
 use Twilio\Rest\Taskrouter;
@@ -34,10 +33,10 @@ class TwilioProvider extends ServiceProvider
             or die("TWILIO_AUTH_TOKEN is not set in the environment");
             return new Client($accountSid, $authToken);
         });
-        $this->app->singleton(WorkspaceFacade::class, function($app){
+        $this->app->singleton(WorkspaceFacade::class, function ($app) {
             $workspaceSid = config('services.twilio')['workspaceSid']
             or die("WORKSPACE_SID needs to be set in the environment");
-            $twilioClient =  $app[Client::class];
+            $twilioClient = $app[Client::class];
             return WorkspaceFacade::createBySid($twilioClient->taskrouter, $workspaceSid);
         });
     }

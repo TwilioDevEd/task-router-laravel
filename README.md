@@ -108,7 +108,7 @@ This project is build using [Laravel](http://laravel.com/) web framework;
   be called.
 1. In case the second agent doesn't answer the call, it will be logged as a
   missed call. You can see all missed calls in the main page of the running
-  server at [http://<sub-domain>.ngrok.io](//localhost:8000).
+  server at [http://{sub-domain}.ngrok.io](//localhost:8000).
 1. Repeat the process but enter any key different to __1__ to choose Voice.
 
  [twilio-phone-number]: https://www.twilio.com/console/phone-numbers/incoming
@@ -118,4 +118,3 @@ This project is build using [Laravel](http://laravel.com/) web framework;
  * No warranty expressed or implied. Software is as is. Diggity.
  * [MIT License](http://www.opensource.org/licenses/mit-license.html)
  * Lovingly crafted by Twilio Developer Education.
-# task-router-laravel

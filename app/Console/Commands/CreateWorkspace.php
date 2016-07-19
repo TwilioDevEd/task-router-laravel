@@ -75,7 +75,7 @@ class CreateWorkspace extends Command
      *
      * @return mixed
      */
-    public function createWorkspaceConfig()
+    function createWorkspaceConfig()
     {
         $fileContent = File::get("resources/workspace.json");
         $interpolatedContent = sprintfn($fileContent, $this->argument());
@@ -187,11 +187,11 @@ class CreateWorkspace extends Command
     {
         $idleActivity = $workspace->findActivityByName("Idle")
         or die("Somehow the activity 'Idle' was not found.");
-        $successMsg = "Workspace \"{$workspace->friendlyName}\"
-         was created successfully.";
+        $successMsg = "Workspace \"{$workspace->friendlyName}\"" .
+            " was created successfully.";
         $this->printTitle($successMsg);
         $this->line(
-            "The following variables will be exported to the system environment."
+            "The following variables will be set automatically."
         );
         $encondedWorkersPhone = http_build_query($workspace->getWorkerPhones());
         $envVars = [

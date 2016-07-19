@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Twilio\Exceptions\TwilioException;
 use Twilio\Twiml;
 
 
