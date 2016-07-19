@@ -17,7 +17,7 @@ class MissedCall extends Model
      * @var array
      */
     protected $fillable = [
-        'selectedProduct', 'phoneNumber',
+        'selected_product', 'phone_number',
     ];
 
     /**
@@ -25,14 +25,15 @@ class MissedCall extends Model
      *
      * @var array
      */
-    protected $attributes = ['internationalPhoneNumber' => ''];
+    protected $appends = ['international_phone_number'];
 
     /**
      * Phone number converted into the American International Standard
+     *
      * @return mixed
      */
     public function getInternationalPhoneNumberAttribute()
     {
-        return $this->attributes['phoneNumber'];
+        return formatPhoneNumberToUSInternational($this->attributes['phone_number']);
     }
 }

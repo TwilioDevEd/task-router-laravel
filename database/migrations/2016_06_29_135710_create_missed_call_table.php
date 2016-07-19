@@ -12,13 +12,14 @@ class CreateMissedCallTable extends Migration
      */
     public function up()
     {
-        Schema::create('missed_calls', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('selectedProduct', 30);
-            $table->string('phoneNumber', 15);
-            $table->string('internationalPhoneNumber', 15);
-            $table->timestamps();
-        });
+        Schema::create(
+            'missed_calls', function (Blueprint $table) {
+                $table->increments('id');
+                $table->string('selected_product', 30);
+                $table->string('phone_number', 15);
+                $table->timestamps();
+            }
+        );
     }
 
     /**

@@ -11,12 +11,50 @@
 |
 */
 
-Route::get('/', function () {
-    $missed_calls = DB::table('missed_calls')->orderBy('created_at', 'desc')->get();
-    return view('welcome', ["missed_calls" => $missed_calls]);
-});
+/**
+ * Main view
+ */
+Route::get(
+    '/', function () {
+        $missed_calls = App\MissedCall::orderBy('created_at', 'desc')->get();
 
-Route::post('/call/incoming', 'TaskRouterController@incomingCall');
-Route::post('/call/enqueue', 'TaskRouterController@enqueueCall');
-Route::post('/assignment', 'TaskRouterController@assignment');
-Route::post('/events', 'TaskRouterController@events');
+        $twilioNumber = config('services.twilio')['number']
+        or die("TWILIO_NUMBER is not set in the system environment");
+
+        return view(
+            'welcome', [
+            "missed_calls" => $missed_calls,
+            "twilioNumber" => $twilioNumber
+            ]
+        );
+    }
+);
+
+/**
+ * Endpoints
+ */
+Route::post(
+    '/call/incoming',
+    ['uses' => 'IncomingCallController@respondToUser',
+        'as' => 'call.incoming']
+);
+Route::post(
+    '/call/enqueue',
+    ['uses' => 'EnqueueCallController@enqueueCall',
+        'as' => 'call.enqueue']
+);
+Route::post(
+    '/assignment',
+    ['uses' => 'CallbackController@assignTask',
+        'as' => 'assignment']
+);
+Route::post(
+    '/events',
+    ['uses' => 'CallbackController@handleEvent',
+        'as' => 'events']
+);
+Route::post(
+    '/message/incoming',
+    ['uses' => 'MessageController@handleIncomingMessage',
+        'as' => 'messages']
+);

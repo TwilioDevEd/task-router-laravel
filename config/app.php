@@ -126,7 +126,7 @@ return [
         /*
          * Service provider for the Twilio TaskRouter app
          */
-        App\Providers\TaskRouterProvider::class,
+        App\Providers\TwilioProvider::class,
         
         /*
          * Laravel Framework Service Providers...

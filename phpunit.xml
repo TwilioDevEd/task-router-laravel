@@ -23,8 +23,14 @@
     </filter>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="DB_CONNECTION" value="sqlite_testing"/>
         <env name="CACHE_DRIVER" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="QUEUE_DRIVER" value="sync"/>
+
+        <env name="POST_WORK_ACTIVITY_SID" value="WAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"/>
+        <env name="WORKSPACE_SID" value="WAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"/>
+        <env name="PHONE_TO_WORKER"
+             value="%2B123456789=WKXXXXXXXXXXX&amp;%2B123456788=WKXXXXXXXXXXY"/>
     </php>
 </phpunit>

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskRouter for Servlets</title>
+    <title>TaskRouter for Laravel</title>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
     <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -21,9 +21,13 @@
     <section class="body-content">
         <div class="panel panel-default full-height-container">
             <div class="panel-heading"><strong>Missed calls</strong> <span class="text-muted">Product/Number<span></div>
-            @if (empty($missed_calls))
+            @if (empty($missed_calls) || $missed_calls->isEmpty())
                 <div class="panel-body">
                     <p>There are no missed calls at the moment.</p>
+                    <p>Call to your Twilio Phone number:<p>
+                    <ul>
+                        <li><a href="tel:{{ $twilioNumber }}">{{ formatPhoneNumberToUSInternational($twilioNumber) }}</a></li>
+                    </ul>
                 </div>
             @else
                 <!-- Table -->
@@ -31,8 +35,12 @@
                     <tbody>
                     @foreach ($missed_calls as $missed_call)
                         <tr>
-                            <td>{{ $missed_call->selectedProduct }}</td>
-                            <td><a href="tel:{{ $missed_call->phoneNumber }}">{{ $missed_call->internationalPhoneNumber }}</a></td>
+                            <td>{{ $missed_call->selected_product }}</td>
+                            <td>
+                                <a href="tel:{{ $missed_call->phone_number }}">
+                                    {{ $missed_call->international_phone_number }}
+                                </a>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
