@@ -46,6 +46,7 @@ This project is build using [Laravel](http://laravel.com/) web framework;
    * Create your `.env` file for you to add your private credentials.
 
 1. Run the migrations.
+
    ```bash
    $ php artisan migrate
    ```
@@ -73,6 +74,7 @@ This project is build using [Laravel](http://laravel.com/) web framework;
 ### Expose the Application to the Wider Internet
 
 1. Expose your application to the wider internet using [ngrok](http://ngrok.com).
+
    You can click[here](#expose-the-application-to-the-wider-internet) for more
    details. This step is important because the application won't work as expected
    if you run it through localhost.
@@ -105,10 +107,10 @@ This project is build using [Laravel](http://laravel.com/) web framework;
 1. Reply with 1.
 1. The specified phone for agent 1 will be called:  __agent1-phone__.
 1. If __agent1-phone__ is not answered in 30 seconds then __agent2-phone__ will
-  be called.
+   be called.
 1. In case the second agent doesn't answer the call, it will be logged as a
-  missed call. You can see all missed calls in the main page of the running
-  server at [http://{sub-domain}.ngrok.io](//localhost:8000).
+   missed call. You can see all missed calls in the main page of the running
+   server at [http://{sub-domain}.ngrok.io](//localhost:8000).
 1. Repeat the process but enter any key different to __1__ to choose Voice.
 
  [twilio-phone-number]: https://www.twilio.com/console/phone-numbers/incoming
