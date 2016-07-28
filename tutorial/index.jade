@@ -71,10 +71,10 @@
     :markdown
       ## The CreateWorkspace Artisan Command
 
-      In this application the [Artisan command][artisan-command] `workspace:create` 
-      is used to orchestrate calls to our `WorkspaceFacade` class in order to 
-      build a Workspace from scratch. `CreateWorkspace` is the php class behind 
-      the Artisan command. It uses data provided by `workspace.json` and expects 
+      In this application the [Artisan command][artisan-command] `workspace:create`
+      is used to orchestrate calls to our `WorkspaceFacade` class in order to
+      build a Workspace from scratch. `CreateWorkspace` is the PHP class behind
+      the Artisan command. It uses data provided by `workspace.json` and expects
       3 arguments:
 
       1. `host` - A public URL to which Twilio can send requests. This can be
@@ -101,11 +101,11 @@
     :markdown
       # Creating a Workspace
 
-      Before creating a workspace, we need to delete any others with the same 
+      Before creating a workspace, we need to delete any others with the same
       `friendlyName` as identifier. In order to create a workspace we need
-      to provide a `friendlyName`, and a `eventCallbackUrl` which contains an 
+      to provide a `friendlyName`, and a `eventCallbackUrl` which contains an
       url to be called every time an event is triggered in the workspace.
-      
+
       ---
       **See Also:**
       * [TaskRouter REST API: Workspaces](//www.twilio.com/docs/api/taskrouter/workspaces)
@@ -117,11 +117,11 @@
       # Creating the Workers
 
       We'll create two workers, Bob and Alice. They each have two attributes:
-      `contact_uri` a phone number and `products`, a list of products
+      `contact_uri`, a phone number, and `products`, a list of products
       each worker is specialized in. We also need to specify an `activity_sid`
-      and a name for each worker. The selected activity will define the status 
+      and a name for each worker. The selected activity will define the status
       of the worker.
-      
+
       ---
       **See Also:**
       * [TaskRouter REST API: Workers](//www.twilio.com/docs/api/taskrouter/workers)
@@ -142,7 +142,7 @@
       1. `All` - This queue targets all users and can be used when there are
          no specialist around for the chosen product. We can use the `"1==1"`
          expression here.
-      
+
       ---
       **See Also:**
       * [TaskRouter REST API: Task Queues](//www.twilio.com/docs/api/taskrouter/taskqueues)
@@ -170,7 +170,7 @@
         the `selected_product` attribute.
         1. `selected_product=="ProgrammableVoice` expression for `Voice`
         Task Queue.
-     
+
      ---
      **See Also:**
      * [TaskRouter REST API: Workflows](//www.twilio.com/docs/api/taskrouter/workflows)
@@ -186,7 +186,7 @@
 
     The endpoint will then process the request and generate a TwiML response.
     We'll use the [Say](//www.twilio.com/docs/api/twiml/say) verb to give the user
-    product alternatives, and a key they can press in order to select one. 
+    product alternatives, and a key they can press in order to select one.
     The [Gather](//www.twilio.com/docs/api/twiml/gather) verb allows us to
     capture the user's key press.
 
@@ -304,19 +304,19 @@
       [twimlets]:  //www.twilio.com/labs/twimlets
       [voicemail-twimlet]: //www.twilio.com/labs/twimlets/voicemail
 
-  .step(data-title="Changing a Worker's Activity", 
+  .step(data-title="Changing a Worker's Activity",
     data-file='app/Http/Controllers/MessageController.php',
     data-highlight='10-50')
     :markdown
       ## Changing a Worker's Activity
 
-      We have created this endpoint, so a worker can send an SMS message to the 
-      support line with the command "On" or "Off" to change their availability 
+      We have created this endpoint, so a worker can send an SMS message to the
+      support line with the command "On" or "Off" to change their availability
       status.
 
-      This is important as a worker's activity will change to `Offline` when 
+      This is important as a worker's activity will change to `Offline` when
       they miss a call. When this happens, they receive an SMS letting them know
-      that their activity has changed, and that they can reply with the `On` 
+      that their activity has changed, and that they can reply with the `On`
       command to make themselves available for incoming calls again.
 
       ---
