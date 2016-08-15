@@ -85,7 +85,7 @@ class CallbackController extends Controller
     protected function redirectToVoiceMail($twilioClient, $callSid, $message)
     {
         $missedCallsEmail = config('services.twilio')['missedCallsEmail']
-        or die("MISSED_CALLS_EMAIL_ADDRESS is not set in the environment");
+            or die("MISSED_CALLS_EMAIL_ADDRESS is not set in the environment");
 
         $call = $twilioClient->calls->getContext($callSid);
         if (!$call) {
@@ -93,8 +93,8 @@ class CallbackController extends Controller
         }
 
         $encodedMsg = urlencode($message);
-        $twimletUrl = "http://twimlets.com/voicemail?
-        Email=$missedCallsEmail&Message=$encodedMsg";
+        $twimletUrl = "http://twimlets.com/voicemail?Email=$missedCallsEmail" .
+            "&Message=$encodedMsg";
         $call->update(["url" => $twimletUrl, "method" => "POST"]);
     }
 
@@ -103,11 +103,13 @@ class CallbackController extends Controller
         $twilioNumber = config('services.twilio')['number']
         or die("TWILIO_NUMBER is not set in the system environment");
 
-        $params = ["body" => config('services.twilio')["offlineMessage"]];
+        $params = [
+            "from" => $twilioNumber,
+            "body" => config('services.twilio')["offlineMessage"]
+        ];
 
         $twilioClient->account->messages->create(
             $workerPhone,
-            $twilioNumber,
             $params
         );
     }

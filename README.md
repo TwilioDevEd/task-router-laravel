@@ -24,6 +24,17 @@ This project is build using [Laravel](http://laravel.com/) web framework;
    $ cd task-router-laravel
    ```
 
+1. Run the Setup script to configure your project.
+
+   ```bash
+   $ php Setup.php
+   ```
+   This will:
+   * Create your [SQLite](https://www.sqlite.org/) database file.
+   * Create your `.env` file for you to add your private credentials.
+
+1. Edit your `.env` file to match your configuration.
+
 1. Install the dependencies with [Composer](https://getcomposer.org/).
 
    ```bash
@@ -36,26 +47,47 @@ This project is build using [Laravel](http://laravel.com/) web framework;
    $ php artisan key:generate
    ```
 
-1. Run the Setup script to configure your project.
-
-   ```bash
-   $ php Setup.php
-   ```
-   This will:
-   * Create your [SQLite](https://www.sqlite.org/) database file.
-   * Create your `.env` file for you to add your private credentials.
-
 1. Run the migrations.
 
    ```bash
    $ php artisan migrate
    ```
 
-1. Seed the database.
+1. Expose your application to the wider internet using [ngrok](http://ngrok.com).
+
+   This step is important because the application won't work as expected
+   if you run it through localhost.
 
    ```bash
-   $ php artisan db:seed
+   $ ngrok http 8000
    ```
+
+   Once ngrok is running, open up your browser and go to your ngrok URL. It will
+   look something like this: `http://<sub-domain>.ngrok.io`
+
+1. Configure a Task Router workflow.
+
+   This application ships with an Artisan command to create and configure the workflow
+   necessary for this application to work. You need to execute this command before running
+   this app.
+
+   ```
+   $ php artisan workspace:create http://<sub-domain>.ngrok.io <bob_phone> <alice_phone>
+   ```
+
+   The command will modify your `.env` file with some additional environment variables.
+
+1. Configure Twilio to call your webhooks
+
+   You will also need to configure Twilio to call your application when calls or SMSs are received on your `TWILIO_NUMBER`. Your urls should look something like this:
+
+   ```
+   voice: http://<sub-domain>.ngrok.io/call/incoming (POST)
+
+   sms:   http://<sub-domain>.ngrok.io/message/incoming (POST)
+   ```
+
+   ![Configure webhooks](http://howtodocs.s3.amazonaws.com/twilio-number-config-all-med.gif)
 
 1. Make sure the tests succeed.
 
@@ -71,32 +103,6 @@ This project is build using [Laravel](http://laravel.com/) web framework;
 
 1. Check it out at [http://localhost:8000](http://localhost:8000).
 
-### Expose the Application to the Wider Internet
-
-1. Expose your application to the wider internet using [ngrok](http://ngrok.com).
-
-   You can click[here](#expose-the-application-to-the-wider-internet) for more
-   details. This step is important because the application won't work as expected
-   if you run it through localhost.
-
-  ```bash
-  $ ngrok http 3000
-  ```
-
-  Once ngrok is running, open up your browser and go to your ngrok URL. It will
-  look something like this: `http://<sub-domain>.ngrok.io`
-
-1. Configure Twilio to call your webhooks.
-
-  You will also need to configure Twilio to call your application when calls are received
-  on your _Twilio Number_. The **SMS & MMS Request URL** should look something like this:
-
-  ```
-  http://<sub-domain>.ngrok.io/directory/search
-  ```
-
-  ![Configure SMS](http://howtodocs.s3.amazonaws.com/twilio-number-config-all-med.gif)
-
 ### How To Demo?
 
 1. Call your Twilio Phone Number. You will get a voice response:
@@ -104,19 +110,27 @@ This project is build using [Laravel](http://laravel.com/) web framework;
   > For Programmable SMS, press one.
   For Voice, press any other key.
 
-1. Reply with 1.
-1. The specified phone for agent 1 will be called:  __agent1-phone__.
-1. If __agent1-phone__ is not answered in 30 seconds then __agent2-phone__ will
-   be called.
-1. In case the second agent doesn't answer the call, it will be logged as a
-   missed call. You can see all missed calls in the main page of the running
-   server at [http://{sub-domain}.ngrok.io](//localhost:8000).
-1. Repeat the process but enter any key different to __1__ to choose Voice.
+1. Select and option and the phone assigned to the product you selected (Bob or Alice's)
+   will start ringing. You can answer the call and have a conversation.
 
- [twilio-phone-number]: https://www.twilio.com/console/phone-numbers/incoming
+1. Alternatively, if you don't answer the call for 15 seconds, the call should be
+   redirected to the next worker. If the call isn't answered by the second worker,
+   you should be redirected to voice mail and leave a message. The transcription
+   of that message should be sent to the email you specified in your environment variables.
 
- ## Meta
+1. Each time a worker misses a call, their activity is changed to offline. You should
+   receive an SMS notification to the number that missed the call. You can reply
+   with `On` or `Off` to this SMS in order to change a worker's status.
 
- * No warranty expressed or implied. Software is as is. Diggity.
- * [MIT License](http://www.opensource.org/licenses/mit-license.html)
- * Lovingly crafted by Twilio Developer Education.
+1. If both workers' activity changes to `Offline` and you call your Twilio Number again,
+   you should be redirected to voice mail after a few seconds as the workflow timeouts
+   when there are no available workers. Change your workers status with the `On`
+   SMS command to be able to receive calls again.
+
+1. Navigate to `https://<ngrok_subdomain>.ngrok.io` to see a list of the missed calls.
+
+## Meta
+
+* No warranty expressed or implied. Software is as is. Diggity.
+* [MIT License](http://www.opensource.org/licenses/mit-license.html)
+* Lovingly crafted by Twilio Developer Education.

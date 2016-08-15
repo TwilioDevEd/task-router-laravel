@@ -15,6 +15,7 @@
   <exclude-pattern>*/app/Http/Controllers/Auth/*</exclude-pattern>
   <exclude-pattern>*/tests/TestCase.php</exclude-pattern>
   <exclude-pattern>*/server.php</exclude-pattern>
+  <exclude-pattern>/app/helpers.php</exclude-pattern>
 
   <rule ref="PEAR">
     <exclude name="PEAR.Commenting"/>

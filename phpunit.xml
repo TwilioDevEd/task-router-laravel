@@ -32,5 +32,6 @@
         <env name="WORKSPACE_SID" value="WAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"/>
         <env name="PHONE_TO_WORKER"
              value="%2B123456789=WKXXXXXXXXXXX&amp;%2B123456788=WKXXXXXXXXXXY"/>
+        <env name="WORKFLOW_SID" value="WWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"/>
     </php>
 </phpunit>

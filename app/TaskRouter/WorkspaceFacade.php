@@ -20,22 +20,23 @@ class WorkspaceFacade
     public static function createNewWorkspace($taskRouterClient, $params)
     {
         $workspaceName = $params["friendlyName"];
-        $existingWorkspace = $taskRouterClient->workspaces()->read(
+        $existingWorkspace = $taskRouterClient->workspaces->read(
             array(
                 "friendlyName" => $workspaceName
             )
         );
         if ($existingWorkspace) {
-            $existingWorkspace[1]->delete();
+            $existingWorkspace[0]->delete();
         }
-        $workspace = $taskRouterClient->workspaces()
+
+        $workspace = $taskRouterClient->workspaces
             ->create($workspaceName, $params);
         return new WorkspaceFacade($taskRouterClient, $workspace);
     }
 
     public static function createBySid($taskRouterClient, $workspaceSid)
     {
-        $workspace = $taskRouterClient->workspaces()->getContext($workspaceSid);
+        $workspace = $taskRouterClient->workspaces($workspaceSid);
         return new WorkspaceFacade($taskRouterClient, $workspace);
     }
 
@@ -89,7 +90,7 @@ class WorkspaceFacade
      */
     function findWorkerBySid($sid)
     {
-        return $this->_workspace->workers->getContext($sid);
+        return $this->_workspace->workers($sid);
     }
 
     /**
@@ -123,7 +124,7 @@ class WorkspaceFacade
             )
         );
         if ($result) {
-            return $result[1];
+            return $result[0];
         }
     }
 
