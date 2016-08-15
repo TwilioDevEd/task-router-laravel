@@ -28,14 +28,14 @@ class TwilioProvider extends ServiceProvider
     {
         $this->app->singleton(Client::class, function ($app) {
             $accountSid = config('services.twilio')['accountSid']
-            or die("TWILIO_ACCOUNT_SID is not set in the environment");
+                or die("TWILIO_ACCOUNT_SID is not set in the environment");
             $authToken = config('services.twilio')['authToken']
-            or die("TWILIO_AUTH_TOKEN is not set in the environment");
+                or die("TWILIO_AUTH_TOKEN is not set in the environment");
             return new Client($accountSid, $authToken);
         });
         $this->app->singleton(WorkspaceFacade::class, function ($app) {
             $workspaceSid = config('services.twilio')['workspaceSid']
-            or die("WORKSPACE_SID needs to be set in the environment");
+                or die("WORKSPACE_SID needs to be set in the environment");
             $twilioClient = $app[Client::class];
             return WorkspaceFacade::createBySid($twilioClient->taskrouter, $workspaceSid);
         });

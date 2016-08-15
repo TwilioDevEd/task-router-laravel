@@ -19,7 +19,7 @@ Route::get(
         $missed_calls = App\MissedCall::orderBy('created_at', 'desc')->get();
 
         $twilioNumber = config('services.twilio')['number']
-        or die("TWILIO_NUMBER is not set in the system environment");
+          or die("TWILIO_NUMBER is not set in the system environment");
 
         return view(
             'welcome', [
