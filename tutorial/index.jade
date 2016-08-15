@@ -48,7 +48,7 @@
       creates a `Twilio\Rest\Client`, which is provided by the
       [Twilio PHP library][twilio-php-doc]. This client is used by
       [WorkspaceFacade][workspace-facade] which encapsulates all logic related to
-      the class `Twilio\Rest\Taskrouter\V1\WorkspaceContext`.
+      the creation of a Task Router workflow.
 
       ---
       **See Also:**
@@ -97,7 +97,7 @@
 
   .step(data-title='Creating a Workspace',
     data-file='app/TaskRouter/WorkspaceFacade.php',
-    data-highlight='20-34')
+    data-highlight='20-35')
     :markdown
       # Creating a Workspace
 
@@ -112,7 +112,7 @@
 
   .step(data-title='Creating the Workers',
     data-file='app/Console/Commands/CreateWorkspace.php',
-    data-highlight='66,85-103')
+    data-highlight='85-103')
     :markdown
       # Creating the Workers
 
@@ -128,7 +128,7 @@
 
   .step(data-title='Creating the Task Queues',
     data-file='app/Console/Commands/CreateWorkspace.php',
-    data-highlight='67,105-124')
+    data-highlight='105-124')
     :markdown
       # Creating the Task Queues
 
@@ -150,7 +150,7 @@
 
  .step(data-title='Creating a Workflow',
    data-file='app/Console/Commands/CreateWorkspace.php',
-   data-highlight='68,126-147')
+   data-highlight='126-147')
    :markdown
      # Creating a Workflow
 
