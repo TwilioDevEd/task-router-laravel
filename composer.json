@@ -4,7 +4,7 @@
     "keywords": ["framework", "laravel"],
     "type": "project",
     "require": {
-        "php": ">=5.5.9",
+        "php": ">=7.1.0",
         "laravel/framework": "5.5.*",
         "squizlabs/php_codesniffer": "2.*",
         "twilio/sdk": "^5.0"

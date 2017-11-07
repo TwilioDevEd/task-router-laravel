@@ -23,7 +23,7 @@ class HomePageTest extends TestCase
 
     public function testViewMissedCalls()
     {
-        $c = function($selected_product, $phone_number) {
+        $c = function ($selected_product, $phone_number) {
             return compact('selected_product', 'phone_number');
         };
 

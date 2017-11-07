@@ -2,6 +2,8 @@
 
 namespace App\TaskRouter;
 
+use Twilio\Rest\Taskrouter\V1\Workspace;
+
 
 class WorkspaceFacade
 {
@@ -139,11 +141,11 @@ class WorkspaceFacade
      * @param $params mixed with the attributes to define the new Worker in the
      * workspace
      *
-     * @return worker or null
+     * @return Workspace\WorkerInstance|Null
      */
     function addWorker($params)
     {
-        $this->_workspace->workers->create($params['friendlyName'], $params);
+        return $this->_workspace->workers->create($params['friendlyName'], $params);
     }
 
     /**
@@ -152,11 +154,11 @@ class WorkspaceFacade
      * @param $params mixed with attributes to define the new Task Queue in the
      * workspace
      *
-     * @return TaskQueue or null
+     * @return Workspace\TaskQueueInstance|Null
      */
     function addTaskQueue($params)
     {
-        $this->_workspace->taskQueues->create(
+        return $this->_workspace->taskQueues->create(
             $params['friendlyName'],
             $params['reservationActivitySid'],
             $params['assignmentActivitySid'],
@@ -171,15 +173,14 @@ class WorkspaceFacade
      * @param $params mixed with attributes to define the new Workflow in the
      * workspace
      *
-     * @return object instance of Workflow
+     * @return Workspace\WorkflowInstance|Null
      */
     function addWorkFlow($params)
     {
-        $configJson = $params["configuration"];
-        $name = $params["friendlyName"];
-        $assignmentCallbackUrl = $params["assignmentCallbackUrl"];
         return $this->_workspace->workflows->create(
-            $name, $configJson, $assignmentCallbackUrl, $params
+            $params["friendlyName"],
+            $params["configuration"],
+            $params
         );
     }
 
