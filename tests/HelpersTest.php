@@ -58,4 +58,13 @@ class HelpersTest extends TestCase
         );
     }
 
+    public function testHostNameIsParsedCorrectly()
+    {
+        $host = 'http://localhost';
+
+        $this->assertEquals(
+            sprintfn('%(host)s/path', ['host' => $host]),
+            "{$host}/path"
+        );
+    }
 }
