@@ -10,43 +10,31 @@ class HomePageTest extends TestCase
 
     public function testBasicExample()
     {
-        $this->visit('/')
-            ->see('Missed Calls');
+        $response = $this->get('/');
+        $response->assertSee('Missed Calls');
     }
 
     public function testEmptyPage()
     {
-        $response = $this
-            ->call(
-                'GET',
-                '/',
-                ['missed_calls' => []]
-            );
-        $this->assertViewHas('missed_calls', new Collection());
-        $this->see("There are no missed calls at the moment.");
+        $response = $this->call('GET', '/', ['missed_calls' => []]);
+        $response->assertViewHas('missed_calls', new Collection());
+        $response->assertSee('There are no missed calls at the moment.');
     }
 
     public function testViewMissedCalls()
     {
-        $newEntry = new MissedCall(
-            [
-            "selected_product" => "Programmable SMS",
-            "phone_number" => "+11112323"
-            ]
-        );
-        $newEntry2 = new MissedCall(
-            [
-            "selected_product" => "Programmable Voice",
-            "phone_number" => "+567567567"
-            ]
-        );
-        $newEntry->save();
-        $newEntry2->save();
-        $this->visit("/")
-            ->see("Programmable Voice")
-            ->see("Programmable SMS")
-            ->see("tel:+11112323")
-            ->see("+567567567");
+        $c = function ($selected_product, $phone_number) {
+            return compact('selected_product', 'phone_number');
+        };
+
+        MissedCall::create($c($s1 = 'Programmable SMS', $p1 = '+11112323'));
+        MissedCall::create($c($s2 = 'Programmable Voice', $p2 = '+567567567'));
+
+        $response = $this->get('/');
+        $response->assertSee($s1);
+        $response->assertSee($s2);
+        $response->assertSee($p1);
+        $response->assertSee($p2);
     }
 
 }
