@@ -1,7 +1,7 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
     "content-hash": "7075279850d2757284ec4f45793eee25",
@@ -1818,29 +1818,33 @@
         },
         {
             "name": "twilio/sdk",
-            "version": "5.15.5",
+            "version": "5.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twilio/twilio-php.git",
-                "reference": "a87a69c828b946059b41d41b50b8ea5cf174ef1f"
+                "reference": "bd5b4d0b49814d04c118f8dc3ea3e2395073ba6d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twilio/twilio-php/zipball/a87a69c828b946059b41d41b50b8ea5cf174ef1f",
-                "reference": "a87a69c828b946059b41d41b50b8ea5cf174ef1f",
+                "url": "https://api.github.com/repos/twilio/twilio-php/zipball/bd5b4d0b49814d04c118f8dc3ea3e2395073ba6d",
+                "reference": "bd5b4d0b49814d04c118f8dc3ea3e2395073ba6d",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.0"
+                "php": ">=5.5.0"
             },
             "require-dev": {
                 "apigen/apigen": "^4.1",
-                "phpunit/phpunit": "4.5.*"
+                "guzzlehttp/guzzle": "^6.3",
+                "phpunit/phpunit": ">=4.5"
+            },
+            "suggest": {
+                "guzzlehttp/guzzle": "An HTTP client to execute the API requests"
             },
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Twilio\\": "Twilio/"
+                    "Twilio\\": "src/Twilio/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1860,7 +1864,7 @@
                 "sms",
                 "twilio"
             ],
-            "time": "2017-11-03T21:18:01+00:00"
+            "time": "2019-10-16T21:59:18+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
@@ -2936,6 +2940,7 @@
                 "mock",
                 "xunit"
             ],
+            "abandoned": true,
             "time": "2017-08-03T14:08:16+00:00"
         },
         {
