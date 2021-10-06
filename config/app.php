@@ -127,7 +127,7 @@ return [
          * Service provider for the Twilio TaskRouter app
          */
         App\Providers\TwilioProvider::class,
-        
+
         /*
          * Laravel Framework Service Providers...
          */
@@ -209,4 +209,17 @@ return [
 
     ],
 
+    'debug_blacklist' => [
+        '_ENV' => [
+            'APP_KEY',
+            'TWILIO_ACCOUNT_SID',
+            'TWILIO_AUTH_TOKEN',
+        ],
+
+        '_SERVER' => [
+            'APP_KEY',
+            'TWILIO_ACCOUNT_SID',
+            'TWILIO_AUTH_TOKEN',
+        ],
+  ],
 ];

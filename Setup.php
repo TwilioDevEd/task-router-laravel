@@ -1,6 +1,6 @@
 <?php
 
-unlink('database/taskrouter.sqlite');
+is_file('database/taskrouter.sqlite') && unlink('database/taskrouter.sqlite');
 touch('database/taskrouter.sqlite');
 print "Created database taskrouter.sqlite\n";
 copy(".env.example", ".env");
