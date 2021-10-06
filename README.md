@@ -20,14 +20,14 @@ This project is build using [Laravel](http://laravel.com/) web framework;
 1. First clone this repository and `cd` into it.
 
    ```bash
-   $ git clone git@github.com:TwilioDevEd/task-router-laravel.git
-   $ cd task-router-laravel
+   git clone git@github.com:TwilioDevEd/task-router-laravel.git
+   cd task-router-laravel
    ```
 
 1. Run the Setup script to configure your project.
 
    ```bash
-   $ php Setup.php
+   php Setup.php
    ```
    This will:
    * Create your [SQLite](https://www.sqlite.org/) database file.
@@ -38,19 +38,19 @@ This project is build using [Laravel](http://laravel.com/) web framework;
 1. Install the dependencies with [Composer](https://getcomposer.org/).
 
    ```bash
-   $ composer install
+   composer install
    ```
 
 1. Generate an `APP_KEY`.
 
    ```bash
-   $ php artisan key:generate
+   php artisan key:generate
    ```
 
 1. Run the migrations.
 
    ```bash
-   $ php artisan migrate
+   php artisan migrate
    ```
 
 1. Expose your application to the wider internet using [ngrok](http://ngrok.com).
@@ -59,7 +59,7 @@ This project is build using [Laravel](http://laravel.com/) web framework;
    if you run it through localhost.
 
    ```bash
-   $ ngrok http 8000
+   ngrok http 8000
    ```
 
    Once ngrok is running, open up your browser and go to your ngrok URL. It will
@@ -72,7 +72,7 @@ This project is build using [Laravel](http://laravel.com/) web framework;
    this app.
 
    ```
-   $ php artisan workspace:create http://<sub-domain>.ngrok.io <bob_phone> <alice_phone>
+   php artisan workspace:create http://<sub-domain>.ngrok.io <bob_phone> <alice_phone>
    ```
 
    The command will modify your `.env` file with some additional environment variables.
@@ -92,13 +92,13 @@ This project is build using [Laravel](http://laravel.com/) web framework;
 1. Make sure the tests succeed.
 
    ```bash
-   $ ./vendor/bin/phpunit
+   ./vendor/bin/phpunit
    ```
 
 1. Start the server.
 
    ```bash
-   $ php artisan serve
+   php artisan serve
    ```
 
 1. Check it out at [http://localhost:8000](http://localhost:8000).
