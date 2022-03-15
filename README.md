@@ -11,7 +11,7 @@ they can be assisted by an agent specialized in the chosen topic. This is
 basically a call center created with the Task Router API of Twilio. This example
 uses a SQLite database to log phone calls which were not assisted.
 
-[Read the full tutorial here](//www.twilio.com/docs/tutorials/walkthrough/task-router/php/laravel)
+[Read the full tutorial here](https://www.twilio.com/docs/taskrouter/tutorials/dynamic-call-center-php-laravel)
 
 ## Local Development
 
@@ -87,7 +87,9 @@ This project is build using [Laravel](http://laravel.com/) web framework;
    sms:   http://<sub-domain>.ngrok.io/message/incoming (POST)
    ```
 
-   ![Configure webhooks](http://howtodocs.s3.amazonaws.com/twilio-number-config-all-med.gif)
+   [Learn how to configure a Twilio phone number for Programmable Voice](https://www.twilio.com/docs/voice/quickstart/php#configure-your-webhook-url)
+
+   [Learn how to configure a Twilio phone number for Programmable SMS](https://www.twilio.com/docs/sms/tutorials/how-to-receive-and-reply-php#configure-your-twilio-number)
 
 1. Make sure the tests succeed.
 
